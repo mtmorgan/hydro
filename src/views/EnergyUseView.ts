@@ -58,7 +58,7 @@ const EnergyUseView: m.Component = {
 					id: "energy-use-input",
 					key: inputFileKey,
 					placeholder: EnergyUse.fileName || placeholder,
-					multiple: false,
+					multiple: true,
 					accept: ["application/xml"],
 					onchange: EnergyUse.loadXml,
 					resetOnChange: true,
