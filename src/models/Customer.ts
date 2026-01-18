@@ -1,74 +1,74 @@
 import m from "mithril";
 import {
-	inputXMLFile,
-	incrementInputFileKey,
-	xpathString,
+  inputXMLFile,
+  incrementInputFileKey,
+  xpathString,
 } from "./XMLFileInput";
 
 export interface Address {
-	organisationName: string;
-	number: string;
-	name: string;
-	town: string;
-	stateOrProvince: string;
-	postalCode: string;
+  organisationName: string;
+  number: string;
+  name: string;
+  town: string;
+  stateOrProvince: string;
+  postalCode: string;
 }
 
-const inputRetailXML = (xmlDoc: Document) => {
-	const serviceSupplier = xmlDoc.getElementsByTagName(
-		"cust:ServiceSupplier"
-	)[0];
-	const serviceLocation = xmlDoc.getElementsByTagName(
-		"cust:ServiceLocation"
-	)[0];
+const inputRetailXML = (xmlDoc: Document): Address => {
+  const serviceSupplier = xmlDoc.getElementsByTagName(
+    "cust:ServiceSupplier",
+  )[0];
+  const serviceLocation = xmlDoc.getElementsByTagName(
+    "cust:ServiceLocation",
+  )[0];
 
-	Customer.address = {
-		organisationName: xpathString(
-			serviceSupplier,
-			"./cust:Organisation/cust:organisationName"
-		),
-		number: xpathString(
-			serviceLocation,
-			"./cust:mainAddress/cust:streetDetail/cust:number"
-		),
-		name: xpathString(
-			serviceLocation,
-			"./cust:mainAddress/cust:streetDetail/cust:name"
-		),
-		town: xpathString(
-			serviceLocation,
-			"./cust:mainAddress/cust:townDetail/cust:name"
-		),
-		stateOrProvince: xpathString(
-			serviceLocation,
-			"./cust:mainAddress/cust:townDetail/cust:stateOrProvince"
-		),
-		postalCode: xpathString(
-			serviceLocation,
-			"./cust:mainAddress/cust:postalCode"
-		),
-	};
-  Customer.ready = true;
-	m.redraw();
-	return xmlDoc;
+  return {
+    organisationName: xpathString(
+      serviceSupplier,
+      "./cust:Organisation/cust:organisationName",
+    ),
+    number: xpathString(
+      serviceLocation,
+      "./cust:mainAddress/cust:streetDetail/cust:number",
+    ),
+    name: xpathString(
+      serviceLocation,
+      "./cust:mainAddress/cust:streetDetail/cust:name",
+    ),
+    town: xpathString(
+      serviceLocation,
+      "./cust:mainAddress/cust:townDetail/cust:name",
+    ),
+    stateOrProvince: xpathString(
+      serviceLocation,
+      "./cust:mainAddress/cust:townDetail/cust:stateOrProvince",
+    ),
+    postalCode: xpathString(
+      serviceLocation,
+      "./cust:mainAddress/cust:postalCode",
+    ),
+  };
 };
 
 const Customer = {
   ready: false,
-	fileName: null as string | null,
-	address: null as Address | null,
-	loadXml: function (files: FileList) {
+  fileName: null as string | null,
+  address: null as Address | null,
+  loadXml: async function (files: FileList) {
     Customer.ready = false;
-		Customer.fileName = null;
-		Customer.address = null;
-		const input = inputXMLFile(inputRetailXML, files);
-		if (input.error) {
-			console.error("Customer loadXML:", input.error);
-		} else {
-			Customer.fileName = files[0]?.name || null;
-		}
-		incrementInputFileKey();
-	},
+    Customer.fileName = null;
+    Customer.address = null;
+    const input = await inputXMLFile(inputRetailXML, files);
+    if (input.error) {
+      console.error("Customer loadXML:", input.error);
+    } else {
+      Customer.fileName = files[0]?.name || null;
+    }
+    Customer.address = input.content[0];
+    Customer.ready = true;
+    incrementInputFileKey();
+    m.redraw();
+  },
 };
 
 export default Customer;
