@@ -1,10 +1,11 @@
 import m from "mithril";
+import AppState from "./AppState";
 import {
   inputXMLFile,
   incrementInputFileKey,
   xpathNumber,
   xpathString,
-} from "./XMLFileInput";
+} from "../services/xmlInput";
 
 export interface EnergyUseRecord {
   timestamp: number;
@@ -32,8 +33,8 @@ const inputEnergyUseXML = (xmlDoc: Document): EnergyUseRecord[] => {
     ).replace(/.*- /, "");
 
     return {
-      timestamp: start * 1000,
-      duration: duration,
+      timestamp: start * 1000, // milliseconds
+      duration: duration * 1000, // milliseconds
       start: new Date(start * 1000),
       days: duration / (60 * 60 * 24),
       cost: cost / 100000,
@@ -49,20 +50,20 @@ const inputEnergyUseXML = (xmlDoc: Document): EnergyUseRecord[] => {
 
 let EnergyUse = {
   ready: false,
-  fileName: null as string[] | null,
-  energyUse: null as EnergyUseRecord[] | null,
-  loadXml: async function (files: FileList) {
-    EnergyUse.fileName = null;
-    EnergyUse.energyUse = null;
+  fileName: [] as string[],
+  energyUse: [] as EnergyUseRecord[],
+  loadXml: async (files: FileList) => {
+    EnergyUse.fileName = [];
+    EnergyUse.energyUse = [];
     EnergyUse.ready = false;
     const input = await inputXMLFile(inputEnergyUseXML, files);
     if (input.error) {
       console.error("EnergyUse loadXML:", input.error);
-    } else {
-      EnergyUse.fileName = input.fileNames;
     }
+    EnergyUse.fileName = input.fileNames;
     // De-duplicate keeping timestamp & longest duration
-    EnergyUse.energyUse = input.content[0]
+    EnergyUse.energyUse = input.content
+      .flat()
       .reduce<Map<number, EnergyUseRecord>>((acc, current) => {
         const existing = acc.get(current.timestamp);
         if (!existing || current.duration > existing.duration) {
@@ -74,6 +75,7 @@ let EnergyUse = {
       .toArray()
       .toSorted((a, b) => a.timestamp - b.timestamp);
     EnergyUse.ready = true;
+    AppState.recompute();
     incrementInputFileKey();
     m.redraw();
   },

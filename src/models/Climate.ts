@@ -1,5 +1,18 @@
 import m from "mithril";
-import { xmlNumber, xmlString } from "./XMLFileInput";
+import AppState from "./AppState";
+import { xmlNumber, xmlString } from "../services/xmlInput";
+
+export interface StationRecord {
+  // Raw data
+  year: number;
+  month: number;
+  day: number;
+  timestamp: number;
+  meantemp: number | null;
+  heatDegDays: number | null;
+  coolDegDays: number | null;
+  totalPrecipitation: number | null;
+}
 
 export interface ClimateStation {
   stationId: string | null;
@@ -12,19 +25,9 @@ export interface ClimateStation {
     longitude: number | null;
     elevation: number | null;
   };
-  stationData: {
-    // Raw data
-    year: number;
-    month: number;
-    day: number;
-    timestamp: number;
-    meantemp: number | null;
-    heatDegDays: number | null;
-    coolDegDays: number | null;
-    totalPrecipitation: number | null;
-  }[];
+  stationData: StationRecord[];
   ready: boolean;
-  load: () => void;
+  load: (climateStationId: string) => Promise<void>;
 }
 
 /**
@@ -144,7 +147,7 @@ async function loadClimateData(
     stationInformation: extractStationInfo(xmlDocs[0]), // Get info once
     stationData: [], // To be filled
     ready: false,
-    load: () => {},
+    load: async () => {},
   };
 
   // Extract and flatten stationData arrays
@@ -174,19 +177,15 @@ let Climate = {
   stationId: null as string | null,
   stationInformation: null as ClimateStation["stationInformation"] | null,
   stationData: [] as ClimateStation["stationData"],
-  load: function () {
-    const base = loadClimateData(
-      Climate.stationId as string,
-      years(2020, 2026),
-    );
-    base.then((station) => {
-      Climate.stationId = station.stationId;
-      Climate.years = station.years;
-      Climate.stationInformation = station.stationInformation;
-      Climate.stationData = station.stationData;
-      Climate.ready = station.ready;
-      m.redraw();
-    });
+  load: async (climateStationId) => {
+    const station = await loadClimateData(climateStationId, years(2020, 2026));
+    Climate.stationId = station.stationId;
+    Climate.years = station.years;
+    Climate.stationInformation = station.stationInformation;
+    Climate.stationData = station.stationData;
+    Climate.ready = station.ready;
+    AppState.recompute();
+    m.redraw();
   },
 } as ClimateStation;
 

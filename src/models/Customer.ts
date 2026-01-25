@@ -1,9 +1,10 @@
 import m from "mithril";
+import AppState from "./AppState";
 import {
   inputXMLFile,
   incrementInputFileKey,
   xpathString,
-} from "./XMLFileInput";
+} from "../services/xmlInput";
 
 export interface Address {
   organisationName: string;
@@ -54,20 +55,24 @@ const Customer = {
   ready: false,
   fileName: null as string | null,
   address: null as Address | null,
-  loadXml: async function (files: FileList) {
+  loadXml: async (files: FileList) => {
     Customer.ready = false;
     Customer.fileName = null;
     Customer.address = null;
-    const input = await inputXMLFile(inputRetailXML, files);
-    if (input.error) {
-      console.error("Customer loadXML:", input.error);
-    } else {
-      Customer.fileName = files[0]?.name || null;
-    }
-    Customer.address = input.content[0];
-    Customer.ready = true;
-    incrementInputFileKey();
-    m.redraw();
+    inputXMLFile(inputRetailXML, files)
+      .then((input) => {
+        if (input.error) {
+          console.error("Customer loadXML:", input.error);
+        }
+        Customer.fileName = files[0]?.name || null;
+        Customer.address = input.content[0];
+        Customer.ready = true;
+      })
+      .then(() => AppState.recompute())
+      .then(() => {
+        incrementInputFileKey();
+        m.redraw();
+      });
   },
 };
 
