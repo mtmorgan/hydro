@@ -3,6 +3,7 @@ import EnergyUse from "./EnergyUse";
 import { aggregateStationRecords } from "../services/aggregate";
 
 export interface AggregatedResult {
+  timestamp: number;
   start: string;
   days: number;
   consumption: number;

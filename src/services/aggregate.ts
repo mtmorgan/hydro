@@ -38,6 +38,7 @@ export const aggregateStationRecords = (
       }
 
       acc.results.push({
+        timestamp: energyRecord.timestamp,
         start: energyRecord.start_formatted as string,
         days: energyRecord.days,
         consumption: energyRecord.consumption,
