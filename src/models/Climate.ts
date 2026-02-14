@@ -1,6 +1,7 @@
 import m from "mithril";
 import AppState from "./AppState";
 import { xmlNumber, xmlString } from "../services/xmlInput";
+import { Status } from "./types";
 
 export interface StationRecord {
   // Raw data
@@ -26,7 +27,7 @@ export interface ClimateStation {
     elevation: number | null;
   };
   stationData: StationRecord[];
-  ready: boolean;
+  status: Status;
   load: (climateStationId: string) => Promise<void>;
 }
 
@@ -146,7 +147,7 @@ async function loadClimateData(
     years: years,
     stationInformation: extractStationInfo(xmlDocs[0]), // Get info once
     stationData: [], // To be filled
-    ready: false,
+    status: Status.IDLE,
     load: async () => {},
   };
 
@@ -161,7 +162,7 @@ async function loadClimateData(
     .filter((a) => a.timestamp < todayTs)
     .sort((a, b) => a.timestamp - b.timestamp);
 
-  station.ready = true;
+  station.status = Status.READY;
   return station;
 }
 
@@ -178,12 +179,13 @@ let Climate = {
   stationInformation: null as ClimateStation["stationInformation"] | null,
   stationData: [] as ClimateStation["stationData"],
   load: async (climateStationId) => {
+    Climate.status = Status.LOADING;
     const station = await loadClimateData(climateStationId, years(2020, 2026));
     Climate.stationId = station.stationId;
     Climate.years = station.years;
     Climate.stationInformation = station.stationInformation;
     Climate.stationData = station.stationData;
-    Climate.ready = station.ready;
+    Climate.status = station.status;
     AppState.recompute();
     m.redraw();
   },

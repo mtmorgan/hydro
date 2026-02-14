@@ -4,6 +4,7 @@ import { AggregatedDataTable } from "./AggregatedDataView";
 import Climate from "../models/Climate";
 import Customer from "../models/Customer";
 import EnergyUse from "../models/EnergyUse";
+import { Status } from "../models/types";
 
 const InsightView: m.Component = {
   view: () => [
@@ -20,7 +21,7 @@ const InsightView: m.Component = {
         // Indented file names: one per line
         EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       ],
-      Climate.ready &&
+      Climate.status === Status.READY &&
         m("div", [
           m("strong", "Climate Station: "),
           Climate.stationInformation.name,

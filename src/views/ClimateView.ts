@@ -3,6 +3,7 @@ import Climate, { type ClimateStation } from "../models/Climate";
 import { StationMap } from "./StationMap";
 import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
+import { Status } from "../models/types";
 
 interface LabelValueViewAttrs {
   label: string;
@@ -132,49 +133,68 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
 
 const ClimateView = () => {
   return {
-    view: () => [
-      m("h2", "Climate"),
-      m(
-        "p",
-        "Find a nearby climate station. The 'best' station may not be the nearest, e.g., King City North is further from us than is the Toronto airport, but the elevation is more comparable. Select the station on the map, then press the 'SUBMIT' button to retrieve the data for that station.",
-      ),
-      m("p", [
-        "Weather stations are from the Government of Canada Environment and Natural Resources. See the government interface to ",
-        m(
-          "a",
-          {
-            href: "https://climate.weather.gc.ca/historical_data/search_historic_data_e.html",
-          },
-          "all climate stations",
-        ),
-        " with historical data. The file used in the map is  ",
-        m(
-          "a",
-          {
-            href: "https://collaboration.cmc.ec.gc.ca/cmc/climate/Get_More_Data_Plus_de_donnees/",
-          },
-          "Station Inventory EN.csv",
-        ),
-        ".",
-      ]),
+    view: () => {
+      const renderClimateReadyStatus = () => {
+        switch (Climate.status) {
+          case Status.LOADING:
+            return m("p.grey-text", "Fetching climate data...");
 
-      m(StationMap, {
-        onSelect: (stationId) => {
-          Climate.load(stationId);
-          m.redraw();
-        },
-      }),
+          case Status.ERROR:
+            return m(".error-box", [
+              m("p.red-text", "Error loading climate station data."),
+            ]);
 
-      Climate.ready
-        ? [
-            m(StationView, {
-              stationId: Climate.stationId,
-              stationInformation: Climate.stationInformation,
-            }),
-            m(StationDataView, { stationData: Climate.stationData }),
-          ]
-        : m("p.grey-text", "No climate data loaded."),
-    ],
+          case Status.READY:
+            return [
+              m(StationView, {
+                stationId: Climate.stationId,
+                stationInformation: Climate.stationInformation,
+              }),
+              m(StationDataView, { stationData: Climate.stationData }),
+            ];
+
+          case Status.IDLE:
+          default:
+            return m("p.grey-text", "Select a climate station...");
+        }
+      };
+
+      return [
+        m("h2", "Climate"),
+        m(
+          "p",
+          "Find a nearby climate station. The 'best' station may not be the nearest, e.g., King City North is further from us than is the Toronto airport, but the elevation is more comparable. Select the station on the map, then press the 'SUBMIT' button to retrieve the data for that station.",
+        ),
+        m("p", [
+          "Weather stations are from the Government of Canada Environment and Natural Resources. See the government interface to ",
+          m(
+            "a",
+            {
+              href: "https://climate.weather.gc.ca/historical_data/search_historic_data_e.html",
+            },
+            "all climate stations",
+          ),
+          " with historical data. The file used in the map is  ",
+          m(
+            "a",
+            {
+              href: "https://collaboration.cmc.ec.gc.ca/cmc/climate/Get_More_Data_Plus_de_donnees/",
+            },
+            "Station Inventory EN.csv",
+          ),
+          ".",
+        ]),
+
+        m(StationMap, {
+          onSelect: (stationId) => {
+            Climate.load(stationId);
+            m.redraw();
+          },
+        }),
+
+        renderClimateReadyStatus(),
+      ];
+    },
   };
 };
 
