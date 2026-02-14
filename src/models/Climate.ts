@@ -35,7 +35,7 @@ export interface ClimateStation {
  * Memoizer for XMLDocuments in localStorage.
  */
 
-// Generic function to memoize XMLDocument requests
+// Generic function to memoize MOST RECENT XMLDocument request
 function memoizeXML<Args extends any[]>(
   baseKey: string,
   requestFn: (...args: Args) => Promise<XMLDocument>,
@@ -65,7 +65,8 @@ function memoizeXML<Args extends any[]>(
     };
 
     try {
-      localStorage.setItem(specificKey, JSON.stringify(cacheData));
+      const cacheString = JSON.stringify(cacheData);
+      localStorage.setItem(specificKey, cacheString);
     } catch (e) {
       console.warn("Storage full; could not cache XML.");
     }
@@ -180,6 +181,11 @@ let Climate = {
   stationData: [] as ClimateStation["stationData"],
   load: async (climateStationId) => {
     Climate.status = Status.LOADING;
+    if (climateStationId !== localStorage.getItem("stationId")) {
+      // Flush cache, since it is only large enough for a couple of stationIds
+      localStorage.clear();
+      localStorage.setItem("stationId", climateStationId);
+    }
     const station = await loadClimateData(climateStationId, years(2020, 2026));
     Climate.stationId = station.stationId;
     Climate.years = station.years;
@@ -187,7 +193,6 @@ let Climate = {
     Climate.stationData = station.stationData;
     Climate.status = station.status;
     AppState.recompute();
-    m.redraw();
   },
 } as ClimateStation;
 
