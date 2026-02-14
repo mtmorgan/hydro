@@ -13,12 +13,12 @@ interface ChartData {
 // Define the attributes the component expects
 interface Attrs {
   aggregatedData: AggregatedResult[];
-  height: number;
+  clientHeight: number;
 }
 
 const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
-  const { aggregatedData, height } = vnode.attrs;
-  const width = vnode.dom.clientWidth;
+  const { aggregatedData, clientHeight: clientHeight } = vnode.attrs;
+  const clientWidth = vnode.dom.clientWidth;
   const data = aggregatedData.map((d) => ({
     ...d,
     date: new Date(d.timestamp),
@@ -26,13 +26,13 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
 
   // vnode.dom is the raw HTMLElement rendered by Mithril
   const container = d3.select<HTMLElement, unknown>(vnode.dom as HTMLElement);
-  const drawingWidth = width - MARGIN.right - MARGIN.left;
-  const drawingHeight = height - MARGIN.top - MARGIN.bottom;
+  const width = clientWidth - MARGIN.right - MARGIN.left;
+  const height = clientHeight - MARGIN.top - MARGIN.bottom;
 
   // Date-axis
   const xExtent = d3.extent(data.map((d) => d.date)) as [Date, Date];
   xExtent[1] = d3.timeDay.offset(xExtent[1], data[data.length - 1].days); // allow for end of cycle
-  const xScale = d3.scaleTime().domain(xExtent).range([0, drawingWidth]);
+  const xScale = d3.scaleTime().domain(xExtent).range([0, width]);
   const xAxisTicks = d3
     .axisBottom(xScale)
     .ticks(d3.timeMonth.every(1))
@@ -250,7 +250,7 @@ const AggregatedDataPlot = {
     AppState.aggregatedStationData.length > 0
       ? m(AggregatedD3, {
           aggregatedData: AppState.aggregatedStationData,
-          height: 400,
+          clientHeight: 400,
         })
       : m("p", "No data available"),
 };
