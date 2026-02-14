@@ -4,17 +4,123 @@ import AppState, { type AggregatedResult } from "../models/AppState";
 
 const MARGIN = { top: 30, right: 120, bottom: 50, left: 50 };
 
-// Define the shape of your data
-interface ChartData {
-  value: number;
-  label: string;
-}
-
 // Define the attributes the component expects
 interface Attrs {
   aggregatedData: AggregatedResult[];
   clientHeight: number;
 }
+
+/**
+ * Represents the minimum data structure required for a chart trace (points,
+ * bars, etc.).
+ */
+interface ChartTrace {
+  /** The starting date/time of the data point (used for X-axis positioning) */
+  date: Date;
+  /** The duration in days that this data point represents (used for bar width
+   * or centering over bars)
+   */
+  days: number;
+  /**
+   * Additional dynamic properties (e.g., consumption, heatingDegreeDays)
+   * are allowed and will be accessed via the 'field' parameter in drawPoints,
+   * drawBars, etc.
+   */
+  [key: string]: any;
+}
+
+const drawAxis = (
+  chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
+  axis: d3.Axis<d3.NumberValue>,
+  axisClass: string,
+  xTranslate: number,
+  yTranslate: number,
+) => {
+  chart
+    .selectAll<SVGGElement, null>(`.${axisClass}-axis`)
+    .data([null])
+    .join("g")
+    .attr("class", `${axisClass}-axis`)
+    .attr("transform", `translate(${xTranslate}, ${yTranslate})`)
+    .call(axis);
+};
+
+const drawAxisLabel = (
+  chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
+  axisLabelClass: string,
+  label: string,
+  x: number,
+  y: number,
+  rotate: number,
+  fill: string,
+) => {
+  chart
+    .selectAll<SVGGElement, null>(`.${axisLabelClass}-axis-label`)
+    .data([null])
+    .join("text")
+    .attr("class", `${axisLabelClass}-axis-label`)
+    .attr("transform", `rotate(${rotate})`) // Rotate for vertical label
+    .attr("x", x)
+    .attr("y", y) // Position to the left of the axis
+    .attr("text-anchor", "middle")
+    .attr("fill", fill) // Ensure label is visible
+    .style("font-size", "12px")
+    .style("font-weight", "bold")
+    .text(label);
+};
+
+const drawPoints = <T extends ChartTrace, K extends keyof T>(
+  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
+  data: T[],
+  field: K,
+  xScale: d3.ScaleTime<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  fill: string,
+) => {
+  const fieldId = String(field);
+  chart
+    .selectAll<SVGCircleElement, T>(`.${fieldId}-point`)
+    .data(data)
+    .join("circle")
+    .attr("class", `${fieldId}-point`)
+    .attr("cx", (d) => {
+      const start = xScale(d.date);
+      const end = xScale(d3.timeDay.offset(d.date, d.days));
+      return start + (end - start) / 2;
+    })
+    .attr("cy", (d) => yScale(d[field]))
+    .attr("r", 4)
+    .attr("fill", fill)
+    .attr("stroke", "white")
+    .attr("stroke-width", 1);
+};
+
+const drawBars = <T extends ChartTrace, K extends keyof T>(
+  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
+  data: T[],
+  field: K,
+  xScale: d3.ScaleTime<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  height: number,
+  fill: string,
+) => {
+  const fieldId = String(field);
+  chart
+    .selectAll<SVGRectElement, T>(`.${fieldId}-bar`)
+    .data(data)
+    .join("rect")
+    .attr("class", `${fieldId}-bar`)
+    .attr("x", (d) => xScale(d3.timeDay.offset(d.date, 1)))
+    .attr("y", (d) => yScale(d[field]))
+    .attr("width", (d) => {
+      const start = xScale(d.date);
+      const end = xScale(d3.timeDay.offset(d.date, d.days));
+      // Subtracting a small amount (e.g. 2px) creates a gap between bars
+      return Math.max(0, end - start - 2);
+    })
+    .attr("height", (d) => height - yScale(d[field]))
+    .attr("fill", fill);
+};
 
 const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData, clientHeight: clientHeight } = vnode.attrs;
@@ -43,6 +149,21 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     .tickSize(9)
     .tickFormat(d3.timeFormat("%b %Y") as any);
 
+  // 'Degree Day' axis
+  const degreeDayExtent = d3.extent(data.map((d) => d.heatdegdays)) as [
+    number,
+    number,
+  ];
+  const degreeDayScale = d3
+    .scaleLinear()
+    .domain([0, degreeDayExtent[1]])
+    .range([height, 0])
+    .nice();
+  const degreeDayAxis = d3
+    .axisLeft(degreeDayScale)
+    .ticks(5)
+    .tickFormat(d3.format(".2s") as any);
+
   // 'Consumption' axis
   const consumptionExtent = d3.extent(data.map((d) => d.consumption)) as [
     number,
@@ -51,10 +172,10 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
   const consumptionScale = d3
     .scaleLinear()
     .domain([0, consumptionExtent[1]])
-    .range([drawingHeight, 0])
+    .range([height, 0])
     .nice();
   const consumptionAxis = d3
-    .axisLeft(consumptionScale)
+    .axisRight(consumptionScale)
     .ticks(5)
     .tickFormat(d3.format(".2s") as any);
 
@@ -63,172 +184,93 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
   const costScale = d3
     .scaleLinear()
     .domain([0, costExtent[1]])
-    .range([drawingHeight, 0])
+    .range([height, 0])
     .nice();
   const costAxis = d3
     .axisRight(costScale)
     .ticks(5)
     .tickFormat(d3.format(".2s") as any);
 
-  // 'DegreeDays' axis
-  const degreeDayExtent = d3.extent(data.map((d) => d.heatdegdays)) as [
-    number,
-    number,
-  ];
-  const degreeDayScale = d3
-    .scaleLinear()
-    .domain([0, degreeDayExtent[1]])
-    .range([drawingHeight, 0])
-    .nice();
-  const degreeDayAxis = d3
-    .axisRight(degreeDayScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
-
   // Selection and drawing area. Type the selection with <ElementType, DataType>
   const svg = container
-    .selectAll<SVGSVGElement, ChartData[]>("svg")
-    .data([null]);
+    .selectAll<SVGSVGElement, null>("svg")
+    .data([null])
+    .join("svg")
+    .attr("width", clientWidth)
+    .attr("height", clientHeight);
 
-  const svgEnter = svg
-    .enter()
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height); // Extra space for x-axis
-
-  const drawingArea = svgEnter
-    .append("g")
+  const chart = svg
+    .selectAll<SVGGElement, null>("g.chart")
+    .data([null])
+    .join("g")
+    .attr("class", "chart")
     .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
 
   // X-axis
-  drawingArea
-    .append("g")
-    .attr("transform", `translate(0, ${drawingHeight})`)
-    .call(xAxisTicks);
-  drawingArea
-    .append("g")
-    .attr("transform", `translate(0, ${drawingHeight})`)
-    .call(xAxisQuarterlyLabels);
-  drawingArea
-    .append("text")
-    .attr("class", "x-axis-label")
-    .attr("text-anchor", "middle") // Centers the text on its X coordinate
-    .attr("x", drawingWidth / 2) // Horizontal center of the chart
-    .attr("y", drawingHeight + MARGIN.bottom - 15) // Positioned 35px below the axis line
-    .attr("fill", "black") // Ensure label is visible
-    .style("font-size", "12px")
-    .style("font-weight", "bold")
-    .text("Month");
-
-  // Consumption axis
-  drawingArea
-    .selectAll<SVGGElement, null>(".consumption-axis")
-    .data([null])
-    .join("g")
-    .attr("class", "consumption-axis")
-    .attr("transform", `translate(0, 0)`)
-    .call(consumptionAxis);
-  drawingArea
-    .selectAll<SVGGElement, null>(".consumption-axis-label")
-    .data([null])
-    .join("text")
-    .attr("class", "consumption-axis-label")
-    .attr("transform", "rotate(-90)") // Rotate for vertical label
-    .attr("x", -drawingHeight / 2)
-    .attr("y", -MARGIN.left + 15) // Position to the left of the axis
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .style("font-weight", "bold")
-    .text("Consumption (kWh)");
+  drawAxis(chart, xAxisTicks, "x", 0, height);
+  drawAxis(chart, xAxisQuarterlyLabels, "x-quarterly", 0, height);
+  drawAxisLabel(
+    chart,
+    "x",
+    "Month",
+    width / 2,
+    height + MARGIN.bottom - 15,
+    0,
+    "black",
+  );
 
   // Heating degree day axis
-  drawingArea
-    .selectAll<SVGGElement, null>(".hdd-axis")
-    .data([null])
-    .join("g")
-    .attr("class", "hdd-axis")
-    .attr("transform", `translate(${drawingWidth}, 0)`)
-    .call(degreeDayAxis);
-  drawingArea
-    .selectAll<SVGGElement, null>(".hdd-axis-label")
-    .data([null])
-    .join("text")
-    .attr("class", "hdd-axis-label")
-    .attr("transform", "rotate(-90)") // Rotate for vertical label
-    .attr("x", -drawingHeight / 2)
-    .attr("y", drawingWidth + 38) // Position to the right of the axis
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .style("font-weight", "bold")
-    .style("fill", "#d62728")
-    .text("Heating Degree Days");
+  drawAxis(chart, degreeDayAxis, "degree-day", 0, 0);
+  drawAxisLabel(
+    chart,
+    "degree-day",
+    "Heating Degree Days",
+    -height / 2,
+    -MARGIN.left + 15,
+    -90,
+    "#B0BEC5",
+  );
+
+  // Consumption axis
+  drawAxis(chart, consumptionAxis, "consumption", width, 0);
+  drawAxisLabel(
+    chart,
+    "consumption",
+    "Consumption (kWh)",
+    -height / 2,
+    width + 40,
+    -90,
+    "#3F51B5",
+  );
 
   // Cost axis
-  drawingArea
-    .selectAll<SVGGElement, null>(".cost-axis")
-    .data([null])
-    .join("g")
-    .attr("class", "cost-axis")
-    .attr("transform", `translate(${drawingWidth + 60}, 0)`)
-    .call(costAxis);
-  drawingArea
-    .selectAll<SVGGElement, null>(".cost-axis-label")
-    .data([null])
-    .join("text")
-    .attr("class", "cost-axis-label")
-    .attr("transform", "rotate(-90)") // Rotate for vertical label
-    .attr("x", -drawingHeight / 2)
-    .attr("y", drawingWidth + 60 + 38) // Position to the right of the axis
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .style("font-weight", "bold")
-    .style("fill", "green")
-    .text("Cost ($)");
+  drawAxis(chart, costAxis, "cost", width + 60, 0);
+  drawAxisLabel(
+    chart,
+    "cost",
+    "Cost ($)",
+    -height / 2,
+    width + 60 + 40,
+    -90,
+    "#FFC107",
+  );
+
+  // Degree day points
+  drawBars(
+    chart,
+    data,
+    "heatdegdays",
+    xScale,
+    degreeDayScale,
+    height,
+    "#B0BEC5",
+  );
 
   // Consumption bars
-  drawingArea
-    .selectAll<SVGRectElement, ChartData>("rect")
-    .data(data)
-    .join("rect")
-    .attr("x", (d) => xScale(d3.timeDay.offset(d.date, 1)))
-    .attr("y", (d) => consumptionScale(d.consumption))
-    .attr("width", (d) => {
-      const end = d3.timeDay.offset(d.date, d.days - 2);
-      return xScale(end) - xScale(d.date);
-    })
-    .attr("height", (d) => drawingHeight - consumptionScale(d.consumption))
-    .attr("fill", "steelblue");
+  drawPoints(chart, data, "consumption", xScale, consumptionScale, "#3F51B5");
 
   // Cost points
-  drawingArea
-    .selectAll<SVGRectElement, ChartData>(".cost-point")
-    .data(data)
-    .join("circle")
-    .attr("class", "cost-point")
-    .attr("cx", (d) => {
-      const end = d3.timeDay.offset(d.date, d.days);
-      return xScale(d.date) + (xScale(end) - xScale(d.date)) / 2;
-    })
-    .attr("cy", (d) => costScale(d.cost))
-    .attr("r", 4)
-    .attr("fill", "green")
-    .attr("stroke", "white")
-    .attr("stroke-width", 1);
-  // Degree day points
-  drawingArea
-    .selectAll<SVGRectElement, ChartData>(".heating-degree-day-point")
-    .data(data)
-    .join("circle")
-    .attr("class", "heating-degree-day-point")
-    .attr("cx", (d) => {
-      const end = d3.timeDay.offset(d.date, d.days);
-      return xScale(d.date) + (xScale(end) - xScale(d.date)) / 2;
-    })
-    .attr("cy", (d) => degreeDayScale(d.heatdegdays))
-    .attr("r", 4)
-    .attr("fill", "#d62728")
-    .attr("stroke", "white")
-    .attr("stroke-width", 1);
+  drawPoints(chart, data, "cost", xScale, costScale, "#FFC107");
 };
 
 const AggregatedD3: m.ClosureComponent<Attrs> = () => {
