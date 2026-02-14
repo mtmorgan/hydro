@@ -1,7 +1,7 @@
 import m from "mithril";
 import Climate, { type ClimateStation } from "../models/Climate";
 import { StationMap } from "./StationMap";
-import { DataTable, SubmitButton } from "mithril-materialized";
+import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
 
 interface LabelValueViewAttrs {
@@ -131,8 +131,6 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
 };
 
 const ClimateView = () => {
-  let selectedStationId: string = "";
-  // Climate.load();
   return {
     view: () => [
       m("h2", "Climate"),
@@ -161,23 +159,11 @@ const ClimateView = () => {
       ]),
 
       m(StationMap, {
-        onSelect: (id) => {
-          selectedStationId = id;
+        onSelect: (stationId) => {
+          Climate.load(stationId);
           m.redraw();
         },
       }),
-      selectedStationId.length > 0 &&
-        m("p", `Selected station: ${selectedStationId}`),
-
-      m(
-        "p",
-        m(SubmitButton, {
-          label: "Submit",
-          iconClass: "right",
-          disabled: selectedStationId.length === 0,
-          onclick: () => Climate.load(selectedStationId),
-        }),
-      ),
 
       Climate.ready
         ? [
