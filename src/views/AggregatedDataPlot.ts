@@ -175,7 +175,89 @@ const drawBars = <T extends ChartTrace, K extends keyof T>(
     .attr("fill", fill);
 };
 
-const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
+const drawScatterplot = <T extends ChartTrace, K extends keyof T>(
+  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
+  data: T[],
+  xField: K,
+  yField: K,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  fill: string,
+  tooltip: d3.Selection<HTMLDivElement, null, any, any>,
+) => {
+  const fieldId = `${String(xField)}-x-${String(yField)}-scatterplot`;
+  chart
+    .selectAll<SVGCircleElement, T>(`.${fieldId}`)
+    .data(data)
+    .join("circle")
+    .attr("class", fieldId)
+    .attr("cx", (d) => xScale(d[xField]))
+    .attr("cy", (d) => yScale(d[yField]))
+    .attr("r", 4)
+    .attr("fill", fill)
+    .attr("stroke", "white")
+    .attr("stroke-width", 1)
+    .on("mouseover", (_, d) => {
+      tooltip.style("visibility", "visible").html(formatTooltipDate(d.date));
+    })
+    .on("mousemove", (event) => {
+      // Position the tooltip near the mouse cursor
+      tooltip
+        .style("top", `${event.pageY - 10}px`)
+        .style("left", `${event.pageX + 10}px`);
+    })
+    .on("mouseout", () => {
+      tooltip.style("visibility", "hidden");
+    });
+};
+
+/**
+ * Renders line segements between x- and y- fields.
+ */
+const drawLine = <T extends ChartTrace, K extends keyof T>(
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  data: T[],
+  xField: K,
+  yField: K,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  stroke: string = "#ff7f0e",
+) => {
+  const fieldId = `${String(xField)}-${String(yField)}-line`;
+  const lineGenerator = d3
+    .line<T>()
+    .x((d) => xScale(d[xField]))
+    .y((d) => yScale(d[yField]));
+
+  // 2. Use .join() on a single-item array [data] to update one path
+  chart
+    .selectAll<SVGPathElement, T[]>(`.${fieldId}`)
+    .data([data]) // Wrap data in an array so D3 creates exactly ONE path
+    .join("path")
+    .attr("class", fieldId)
+    .attr("fill", "none")
+    .attr("stroke", stroke)
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "1, 5")
+    .attr("d", lineGenerator); // Apply the path string
+};
+
+const drawScatterplotLine = <T extends ChartTrace, K extends keyof T>(
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  data: T[],
+  xField: K,
+  yField: K,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  fill: string,
+  stroke: string,
+  tooltip: d3.Selection<HTMLDivElement, null, any, any>,
+) => {
+  drawLine(chart, data, xField, yField, xScale, yScale, stroke);
+  drawScatterplot(chart, data, xField, yField, xScale, yScale, fill, tooltip);
+};
+
+const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData, clientHeight: clientHeight } = vnode.attrs;
   const clientWidth = vnode.dom.clientWidth;
   const data = aggregatedData.map((d) => ({
@@ -326,10 +408,111 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
 const AggregatedD3: m.ClosureComponent<Attrs> = () => {
   return {
     oncreate(vnode: m.VnodeDOM<Attrs>) {
-      drawChart(vnode);
+      drawHeatingConsumptionCostChart(vnode);
     },
     onupdate(vnode: m.VnodeDOM<Attrs>) {
-      drawChart(vnode);
+      drawHeatingConsumptionCostChart(vnode);
+    },
+    view() {
+      return m("div.chart-container");
+    },
+  };
+};
+
+const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
+  const { aggregatedData } = vnode.attrs;
+  const clientWidth = vnode.dom.clientWidth;
+  const data = aggregatedData.map((d) => ({
+    ...d,
+    date: new Date(d.timestamp),
+  }));
+
+  // vnode.dom is the raw HTMLElement rendered by Mithril
+  const width = clientWidth - MARGIN.right - MARGIN.left;
+  const height = width;
+  const clientHeight = height + MARGIN.top + MARGIN.bottom;
+  const chart = selectChart(
+    vnode,
+    "heating-consumption",
+    clientWidth,
+    clientHeight,
+  );
+  const tooltip = selectTooltip(vnode, "heating-consumption");
+
+  // 'Degree Day' axis (x)
+  const degreeDayExtent = d3.extent(data.map((d) => d.heatdegdays)) as [
+    number,
+    number,
+  ];
+  const degreeDayScale = d3
+    .scaleLinear()
+    .domain([0, degreeDayExtent[1]])
+    .range([0, width])
+    .nice();
+  const degreeDayAxis = d3
+    .axisBottom(degreeDayScale)
+    .ticks(5)
+    .tickFormat(d3.format(".2s") as any);
+
+  // 'Consumption' axis (y)
+  const consumptionExtent = d3.extent(data.map((d) => d.consumption)) as [
+    number,
+    number,
+  ];
+  const consumptionScale = d3
+    .scaleLinear()
+    .domain([0, consumptionExtent[1]])
+    .range([height, 0])
+    .nice();
+  const consumptionAxis = d3
+    .axisLeft(consumptionScale)
+    .ticks(5)
+    .tickFormat(d3.format(".2s") as any);
+
+  // Draw heating degree day (x) axis
+  drawAxis(chart, degreeDayAxis, "degree-day", 0, height);
+  drawAxisLabel(
+    chart,
+    "degree-day",
+    "Heating Degree Days",
+    width / 2,
+    height + MARGIN.bottom - 15,
+    0,
+    COLOR.degreeDay,
+  );
+
+  // Draw consumption (y) axis
+  drawAxis(chart, consumptionAxis, "consumption-day", 0, 0);
+  drawAxisLabel(
+    chart,
+    "consumption",
+    "Consumption (kWh)",
+    -height / 2,
+    -MARGIN.left + 15,
+    -90,
+    COLOR.consumption,
+  );
+
+  drawScatterplotLine(
+    chart,
+    data,
+    "heatdegdays",
+    "consumption",
+    degreeDayScale,
+    consumptionScale,
+    COLOR.consumption,
+    COLOR.month,
+    tooltip,
+  );
+};
+
+const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
+  return {
+    oncreate(vnode: m.VnodeDOM<Attrs>) {
+      drawHeatingConsumptionChart(vnode);
+    },
+    onupdate(vnode: m.VnodeDOM<Attrs>) {
+      drawHeatingConsumptionChart(vnode);
     },
     view() {
       return m("div.chart-container");
@@ -340,10 +523,22 @@ const AggregatedD3: m.ClosureComponent<Attrs> = () => {
 const AggregatedDataPlot = {
   view: () =>
     AppState.aggregatedStationData.length > 0
-      ? m(AggregatedD3, {
-          aggregatedData: AppState.aggregatedStationData,
-          clientHeight: 400,
-        })
+      ? [
+          m(
+            "div.card-panel",
+            m(AggregatedD3, {
+              aggregatedData: AppState.aggregatedStationData,
+              clientHeight: 400,
+            }),
+          ),
+          m(
+            "div.card-panel",
+            m(HeatingConsumption, {
+              aggregatedData: AppState.aggregatedStationData,
+              clientHeight: 0,
+            }),
+          ),
+        ]
       : m("p", "No data available"),
 };
 

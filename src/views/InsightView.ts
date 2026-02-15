@@ -29,7 +29,7 @@ const InsightView: m.Component = {
         ]),
     ]),
     m("div.card-panel", m(AggregatedDataTable)),
-    m("div.card-panel", m(AggregatedDataPlot)),
+    m(AggregatedDataPlot),
   ],
 };
 
