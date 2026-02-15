@@ -4,6 +4,13 @@ import AppState, { type AggregatedResult } from "../models/AppState";
 
 const MARGIN = { top: 30, right: 120, bottom: 50, left: 50 };
 
+const COLOR = {
+  month: "black",
+  degreeDay: "#B0BEC5",
+  consumption: "#3F51B5",
+  cost: "#FFC107",
+};
+
 // Define the attributes the component expects
 interface Attrs {
   aggregatedData: AggregatedResult[];
@@ -28,6 +35,52 @@ interface ChartTrace {
    */
   [key: string]: any;
 }
+
+const selectChart = (
+  vnode: m.VnodeDOM<Attrs>,
+  chartClass: string,
+  width: number,
+  height: number,
+) => {
+  const chartId = `${chartClass}-chart`;
+  const container = d3.select<HTMLElement, unknown>(vnode.dom as HTMLElement);
+
+  const svg = container
+    .selectAll<SVGSVGElement, null>(`.${chartId}-svg`)
+    .data([null])
+    .join("svg")
+    .attr("class", chartId)
+    .attr("width", width)
+    .attr("height", height);
+
+  const chart = svg
+    .selectAll<SVGGElement, null>(`${chartId}-chart`)
+    .data([null])
+    .join("g")
+    .attr("class", chartId)
+    .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
+
+  return chart;
+};
+
+const selectTooltip = (vnode: m.VnodeDOM<Attrs>, className: string) => {
+  const classId = `${className}-tooltip`;
+  return d3
+    .select(vnode.dom as HTMLElement)
+    .selectAll<HTMLDivElement, null>(`.${classId}`)
+    .data([null])
+    .join("div")
+    .attr("class", classId)
+    .style("position", "absolute")
+    .style("visibility", "hidden") // Hidden by default
+    .style("background", "rgba(0, 0, 0, 0.8)")
+    .style("color", "#fff")
+    .style("padding", "8px")
+    .style("border-radius", "4px")
+    .style("pointer-events", "none"); // Prevents tooltip from blocking mouse events
+};
+
+const formatTooltipDate = d3.timeFormat("%B %Y");
 
 const drawAxis = (
   chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
@@ -77,12 +130,12 @@ const drawPoints = <T extends ChartTrace, K extends keyof T>(
   yScale: d3.ScaleLinear<number, number>,
   fill: string,
 ) => {
-  const fieldId = String(field);
+  const fieldId = `${String(field)}-point`;
   chart
-    .selectAll<SVGCircleElement, T>(`.${fieldId}-point`)
+    .selectAll<SVGCircleElement, T>(`.${fieldId}`)
     .data(data)
     .join("circle")
-    .attr("class", `${fieldId}-point`)
+    .attr("class", fieldId)
     .attr("cx", (d) => {
       const start = xScale(d.date);
       const end = xScale(d3.timeDay.offset(d.date, d.days));
@@ -104,12 +157,12 @@ const drawBars = <T extends ChartTrace, K extends keyof T>(
   height: number,
   fill: string,
 ) => {
-  const fieldId = String(field);
+  const fieldId = `${String(field)}-bar`;
   chart
-    .selectAll<SVGRectElement, T>(`.${fieldId}-bar`)
+    .selectAll<SVGRectElement, T>(`.${fieldId}`)
     .data(data)
     .join("rect")
-    .attr("class", `${fieldId}-bar`)
+    .attr("class", fieldId)
     .attr("x", (d) => xScale(d3.timeDay.offset(d.date, 1)))
     .attr("y", (d) => yScale(d[field]))
     .attr("width", (d) => {
@@ -131,9 +184,14 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
   }));
 
   // vnode.dom is the raw HTMLElement rendered by Mithril
-  const container = d3.select<HTMLElement, unknown>(vnode.dom as HTMLElement);
   const width = clientWidth - MARGIN.right - MARGIN.left;
   const height = clientHeight - MARGIN.top - MARGIN.bottom;
+  const chart = selectChart(
+    vnode,
+    "heating-consumption-cost",
+    clientWidth,
+    clientHeight,
+  );
 
   // Date-axis
   const xExtent = d3.extent(data.map((d) => d.date)) as [Date, Date];
@@ -191,21 +249,6 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     .ticks(5)
     .tickFormat(d3.format(".2s") as any);
 
-  // Selection and drawing area. Type the selection with <ElementType, DataType>
-  const svg = container
-    .selectAll<SVGSVGElement, null>("svg")
-    .data([null])
-    .join("svg")
-    .attr("width", clientWidth)
-    .attr("height", clientHeight);
-
-  const chart = svg
-    .selectAll<SVGGElement, null>("g.chart")
-    .data([null])
-    .join("g")
-    .attr("class", "chart")
-    .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
-
   // X-axis
   drawAxis(chart, xAxisTicks, "x", 0, height);
   drawAxis(chart, xAxisQuarterlyLabels, "x-quarterly", 0, height);
@@ -216,7 +259,7 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     width / 2,
     height + MARGIN.bottom - 15,
     0,
-    "black",
+    COLOR.month,
   );
 
   // Heating degree day axis
@@ -228,7 +271,7 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     -height / 2,
     -MARGIN.left + 15,
     -90,
-    "#B0BEC5",
+    COLOR.degreeDay,
   );
 
   // Consumption axis
@@ -240,7 +283,7 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     -height / 2,
     width + 40,
     -90,
-    "#3F51B5",
+    COLOR.consumption,
   );
 
   // Cost axis
@@ -252,7 +295,7 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     -height / 2,
     width + 60 + 40,
     -90,
-    "#FFC107",
+    COLOR.cost,
   );
 
   // Degree day points
@@ -263,14 +306,21 @@ const drawChart = (vnode: m.VnodeDOM<Attrs>) => {
     xScale,
     degreeDayScale,
     height,
-    "#B0BEC5",
+    COLOR.degreeDay,
   );
 
   // Consumption bars
-  drawPoints(chart, data, "consumption", xScale, consumptionScale, "#3F51B5");
+  drawPoints(
+    chart,
+    data,
+    "consumption",
+    xScale,
+    consumptionScale,
+    COLOR.consumption,
+  );
 
   // Cost points
-  drawPoints(chart, data, "cost", xScale, costScale, "#FFC107");
+  drawPoints(chart, data, "cost", xScale, costScale, COLOR.cost);
 };
 
 const AggregatedD3: m.ClosureComponent<Attrs> = () => {
