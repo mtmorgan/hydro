@@ -367,12 +367,14 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // Consumption points
-  drawPoints(
+  drawBars(
     chart,
     data,
     "consumption",
-    xScaleMidpoint,
+    (d) => xScaleMidpoint(d) - 2,
+    (d) => xScaleMidpoint(d) + 4,
     (d) => consumptionScale(d.consumption),
+    height,
     COLOR.consumption,
   );
 
