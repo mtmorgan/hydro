@@ -38,26 +38,27 @@ interface ChartTrace {
 
 const selectChart = (
   vnode: m.VnodeDOM<Attrs>,
-  chartClass: string,
+  className: string,
   width: number,
   height: number,
 ) => {
-  const chartId = `${chartClass}-chart`;
+  const svgId = `${className}-svg`;
+  const classId = `${className}-chart`;
   const container = d3.select<HTMLElement, unknown>(vnode.dom as HTMLElement);
 
   const svg = container
-    .selectAll<SVGSVGElement, null>(`.${chartId}-svg`)
+    .selectAll<SVGSVGElement, null>(`.${svgId}`)
     .data([null])
     .join("svg")
-    .attr("class", chartId)
+    .attr("class", svgId)
     .attr("width", width)
     .attr("height", height);
 
   const chart = svg
-    .selectAll<SVGGElement, null>(`${chartId}-chart`)
+    .selectAll<SVGGElement, null>(`.${classId}`)
     .data([null])
     .join("g")
-    .attr("class", chartId)
+    .attr("class", classId)
     .attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
 
   return chart;
@@ -85,33 +86,35 @@ const formatTooltipDate = d3.timeFormat("%B %Y");
 const drawAxis = (
   chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
   axis: d3.Axis<d3.NumberValue>,
-  axisClass: string,
+  className: string,
   xTranslate: number,
   yTranslate: number,
 ) => {
+  const classId = `${className}-axis`;
   chart
-    .selectAll<SVGGElement, null>(`.${axisClass}-axis`)
+    .selectAll<SVGGElement, null>(`.${classId}`)
     .data([null])
     .join("g")
-    .attr("class", `${axisClass}-axis`)
+    .attr("class", classId)
     .attr("transform", `translate(${xTranslate}, ${yTranslate})`)
     .call(axis);
 };
 
 const drawAxisLabel = (
   chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
-  axisLabelClass: string,
+  className: string,
   label: string,
   x: number,
   y: number,
   rotate: number,
   fill: string,
 ) => {
+  const classId = `${className}-axis-label`;
   chart
-    .selectAll<SVGGElement, null>(`.${axisLabelClass}-axis-label`)
+    .selectAll<SVGGElement, null>(`.${classId}`)
     .data([null])
     .join("text")
-    .attr("class", `${axisLabelClass}-axis-label`)
+    .attr("class", classId)
     .attr("transform", `rotate(${rotate})`) // Rotate for vertical label
     .attr("x", x)
     .attr("y", y) // Position to the left of the axis
@@ -228,7 +231,7 @@ const drawScatterplotLine = <T extends ChartTrace>(
 
 const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData, clientHeight: clientHeight } = vnode.attrs;
-  const clientWidth = vnode.dom.clientWidth;
+  const clientWidth = Math.max(600, vnode.dom.clientWidth); // minimum width
   const data = aggregatedData.map((d) => ({
     ...d,
     date: new Date(d.timestamp),
@@ -390,16 +393,17 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
 };
 
 const HeatingConsumptionCost: m.ClosureComponent<Attrs> = () => {
+  let observer: ResizeObserver;
+
   return {
-    oncreate(vnode: m.VnodeDOM<Attrs>) {
-      AppState.aggregatedStationData.length > 0 &&
-        drawHeatingConsumptionCostChart(vnode);
+    oncreate: (vnode) => {
+      drawHeatingConsumptionCostChart(vnode);
+      observer = new ResizeObserver(() => m.redraw());
+      observer.observe(vnode.dom);
     },
-    onupdate(vnode: m.VnodeDOM<Attrs>) {
-      AppState.aggregatedStationData.length > 0 &&
-        drawHeatingConsumptionCostChart(vnode);
-    },
-    view() {
+    onupdate: (vnode) => drawHeatingConsumptionCostChart(vnode),
+    onremove: () => observer.disconnect(),
+    view: () => {
       return m(
         "div.chart-container",
         m(
@@ -417,7 +421,7 @@ const HeatingConsumptionCost: m.ClosureComponent<Attrs> = () => {
 
 const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData } = vnode.attrs;
-  const clientWidth = vnode.dom.clientWidth;
+  const clientWidth = Math.min(Math.max(400, vnode.dom.clientWidth), 800);
   const data = aggregatedData.map((d) => ({
     ...d,
     date: new Date(d.timestamp),
@@ -502,14 +506,17 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
 };
 
 const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
+  let observer: ResizeObserver;
+
   return {
-    oncreate(vnode: m.VnodeDOM<Attrs>) {
+    oncreate: (vnode) => {
       drawHeatingConsumptionChart(vnode);
+      observer = new ResizeObserver(() => m.redraw());
+      observer.observe(vnode.dom);
     },
-    onupdate(vnode: m.VnodeDOM<Attrs>) {
-      drawHeatingConsumptionChart(vnode);
-    },
-    view() {
+    onupdate: (vnode) => drawHeatingConsumptionChart(vnode),
+    onremove: () => observer.disconnect(),
+    view: () => {
       return m(
         "div.chart-container",
         m(
