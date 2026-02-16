@@ -18,6 +18,18 @@
 }
 
 /*
+ * D3 empty data
+ */
+
+.d3-empty-chart {
+    padding: 2rem 3rem;
+    text-align: center;
+    font-style: italic;
+    color: var(--mm-text-secondary);
+    border: 1px solid #e0e0e0;
+}
+
+/*
  * Leaflet 'lollipop' icon
  */
 

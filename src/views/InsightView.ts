@@ -5,6 +5,7 @@ import Climate from "../models/Climate";
 import Customer from "../models/Customer";
 import EnergyUse from "../models/EnergyUse";
 import { Status } from "../models/types";
+import AggregatedDataPlot from "./AggregatedDataPlot";
 
 const InsightView: m.Component = {
   view: () => [
@@ -27,7 +28,8 @@ const InsightView: m.Component = {
           Climate.stationInformation.name,
         ]),
     ]),
-    m("div.card-panel", [m(AggregatedDataTable)]),
+    m("div.card-panel", m(AggregatedDataTable)),
+    m(AggregatedDataPlot),
   ],
 };
 

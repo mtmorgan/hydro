@@ -52,10 +52,9 @@ export const AggregatedDataTable = {
     m(
       "p",
       m("strong", [
-        "Climate and energy use: ",
-        AppState.aggregatedStationData.length > 0
-          ? `${AppState.aggregatedStationData.length} months (scroll for more)`
-          : "",
+        "Climate and energy use",
+        AppState.aggregatedStationData.length > 0 &&
+          ` for ${AppState.aggregatedStationData.length} months (scroll for more)`,
       ]),
     ),
     m(".table-scroll-container", [
@@ -64,6 +63,7 @@ export const AggregatedDataTable = {
         columns: CLIMATE_TABLE_COLUMNS,
         data: AppState.aggregatedStationData,
         sortBy: "startFormatted",
+        i18n: { noDataAvailable: "Select hydro and climate data." },
       }),
     ]),
   ],
