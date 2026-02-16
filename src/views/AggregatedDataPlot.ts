@@ -122,119 +122,89 @@ const drawAxisLabel = (
     .text(label);
 };
 
-const drawPoints = <T extends ChartTrace, K extends keyof T>(
+const drawPoints = <T extends ChartTrace>(
   chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
   data: T[],
-  field: K,
-  xScale: d3.ScaleTime<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
+  className: string,
+  x: (d: T) => number,
+  y: (d: T) => number,
   fill: string,
+  tooltip: d3.Selection<HTMLDivElement, null, any, any> | null = null,
 ) => {
-  const fieldId = `${String(field)}-point`;
+  const classId = `${className}-point`;
   chart
-    .selectAll<SVGCircleElement, T>(`.${fieldId}`)
+    .selectAll<SVGCircleElement, T>(`.${classId}`)
     .data(data)
     .join("circle")
-    .attr("class", fieldId)
-    .attr("cx", (d) => {
-      const start = xScale(d.date);
-      const end = xScale(d3.timeDay.offset(d.date, d.days));
-      return start + (end - start) / 2;
-    })
-    .attr("cy", (d) => yScale(d[field]))
-    .attr("r", 4)
-    .attr("fill", fill)
-    .attr("stroke", "white")
-    .attr("stroke-width", 1);
-};
-
-const drawBars = <T extends ChartTrace, K extends keyof T>(
-  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
-  data: T[],
-  field: K,
-  xScale: d3.ScaleTime<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  height: number,
-  fill: string,
-) => {
-  const fieldId = `${String(field)}-bar`;
-  chart
-    .selectAll<SVGRectElement, T>(`.${fieldId}`)
-    .data(data)
-    .join("rect")
-    .attr("class", fieldId)
-    .attr("x", (d) => xScale(d3.timeDay.offset(d.date, 1)))
-    .attr("y", (d) => yScale(d[field]))
-    .attr("width", (d) => {
-      const start = xScale(d.date);
-      const end = xScale(d3.timeDay.offset(d.date, d.days));
-      // Subtracting a small amount (e.g. 2px) creates a gap between bars
-      return Math.max(0, end - start - 2);
-    })
-    .attr("height", (d) => height - yScale(d[field]))
-    .attr("fill", fill);
-};
-
-const drawScatterplot = <T extends ChartTrace, K extends keyof T>(
-  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
-  data: T[],
-  xField: K,
-  yField: K,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  fill: string,
-  tooltip: d3.Selection<HTMLDivElement, null, any, any>,
-) => {
-  const fieldId = `${String(xField)}-x-${String(yField)}-scatterplot`;
-  chart
-    .selectAll<SVGCircleElement, T>(`.${fieldId}`)
-    .data(data)
-    .join("circle")
-    .attr("class", fieldId)
-    .attr("cx", (d) => xScale(d[xField]))
-    .attr("cy", (d) => yScale(d[yField]))
+    .attr("class", classId)
+    .attr("cx", (d) => x(d))
+    .attr("cy", (d) => y(d))
     .attr("r", 4)
     .attr("fill", fill)
     .attr("stroke", "white")
     .attr("stroke-width", 1)
     .on("mouseover", (_, d) => {
-      tooltip.style("visibility", "visible").html(formatTooltipDate(d.date));
+      tooltip &&
+        tooltip.style("visibility", "visible").html(formatTooltipDate(d.date));
     })
     .on("mousemove", (event) => {
       // Position the tooltip near the mouse cursor
-      tooltip
-        .style("top", `${event.pageY - 10}px`)
-        .style("left", `${event.pageX + 10}px`);
+      tooltip &&
+        tooltip
+          .style("top", `${event.pageY - 10}px`)
+          .style("left", `${event.pageX + 10}px`);
     })
     .on("mouseout", () => {
-      tooltip.style("visibility", "hidden");
+      tooltip && tooltip.style("visibility", "hidden");
     });
+};
+
+const drawBars = <T extends ChartTrace>(
+  chart: d3.Selection<SVGGElement, any, SVGSVGElement, any>,
+  data: T[],
+  className: string,
+  x: (d: T) => number,
+  xEnd: (d: T) => number,
+  y: (d: T) => number,
+  height: number,
+  fill: string,
+) => {
+  const classId = `${className}-bar`;
+  chart
+    .selectAll<SVGRectElement, T>(`.${classId}`)
+    .data(data)
+    .join("rect")
+    .attr("class", classId)
+    .attr("x", (d) => x(d))
+    .attr("y", (d) => y(d))
+    .attr("width", (d) => Math.max(0, xEnd(d) - x(d) - 2))
+    .attr("height", (d) => height - y(d))
+    .attr("fill", fill);
 };
 
 /**
  * Renders line segements between x- and y- fields.
  */
-const drawLine = <T extends ChartTrace, K extends keyof T>(
+const drawLine = <T extends ChartTrace>(
   chart: d3.Selection<SVGGElement, any, any, any>,
   data: T[],
-  xField: K,
-  yField: K,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
+  className: string,
+  x: (d: T) => number,
+  y: (d: T) => number,
   stroke: string = "#ff7f0e",
 ) => {
-  const fieldId = `${String(xField)}-${String(yField)}-line`;
+  const classId = `${className}-line`;
   const lineGenerator = d3
     .line<T>()
-    .x((d) => xScale(d[xField]))
-    .y((d) => yScale(d[yField]));
+    .x((d) => x(d))
+    .y((d) => y(d));
 
   // 2. Use .join() on a single-item array [data] to update one path
   chart
-    .selectAll<SVGPathElement, T[]>(`.${fieldId}`)
+    .selectAll<SVGPathElement, T[]>(`.${classId}`)
     .data([data]) // Wrap data in an array so D3 creates exactly ONE path
     .join("path")
-    .attr("class", fieldId)
+    .attr("class", classId)
     .attr("fill", "none")
     .attr("stroke", stroke)
     .attr("stroke-width", 2)
@@ -242,19 +212,18 @@ const drawLine = <T extends ChartTrace, K extends keyof T>(
     .attr("d", lineGenerator); // Apply the path string
 };
 
-const drawScatterplotLine = <T extends ChartTrace, K extends keyof T>(
+const drawScatterplotLine = <T extends ChartTrace>(
   chart: d3.Selection<SVGGElement, any, any, any>,
   data: T[],
-  xField: K,
-  yField: K,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
+  className: string,
+  x: (d: T) => number,
+  y: (d: T) => number,
   fill: string,
   stroke: string,
   tooltip: d3.Selection<HTMLDivElement, null, any, any>,
 ) => {
-  drawLine(chart, data, xField, yField, xScale, yScale, stroke);
-  drawScatterplot(chart, data, xField, yField, xScale, yScale, fill, tooltip);
+  drawLine(chart, data, className, x, y, stroke);
+  drawPoints(chart, data, className, x, y, fill, tooltip);
 };
 
 const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
@@ -279,6 +248,11 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   const xExtent = d3.extent(data.map((d) => d.date)) as [Date, Date];
   xExtent[1] = d3.timeDay.offset(xExtent[1], data[data.length - 1].days); // allow for end of cycle
   const xScale = d3.scaleTime().domain(xExtent).range([0, width]);
+  const xScaleMidpoint = (d: ChartTrace) => {
+    const start = xScale(d.date);
+    const end = xScale(d3.timeDay.offset(d.date, d.days));
+    return start + (end - start) / 2;
+  };
   const xAxisTicks = d3
     .axisBottom(xScale)
     .ticks(d3.timeMonth.every(1))
@@ -380,32 +354,40 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     COLOR.cost,
   );
 
-  // Degree day points
+  // Degree day bars
   drawBars(
     chart,
     data,
     "heatdegdays",
-    xScale,
-    degreeDayScale,
+    (d) => xScale(d.date),
+    (d) => xScale(d3.timeDay.offset(d.date, d.days)),
+    (d) => degreeDayScale(d.heatdegdays),
     height,
     COLOR.degreeDay,
   );
 
-  // Consumption bars
+  // Consumption points
   drawPoints(
     chart,
     data,
     "consumption",
-    xScale,
-    consumptionScale,
+    xScaleMidpoint,
+    (d) => consumptionScale(d.consumption),
     COLOR.consumption,
   );
 
   // Cost points
-  drawPoints(chart, data, "cost", xScale, costScale, COLOR.cost);
+  drawPoints(
+    chart,
+    data,
+    "cost",
+    xScaleMidpoint,
+    (d) => costScale(d.cost),
+    COLOR.cost,
+  );
 };
 
-const AggregatedD3: m.ClosureComponent<Attrs> = () => {
+const HeatingConsumptionCost: m.ClosureComponent<Attrs> = () => {
   return {
     oncreate(vnode: m.VnodeDOM<Attrs>) {
       drawHeatingConsumptionCostChart(vnode);
@@ -414,7 +396,10 @@ const AggregatedD3: m.ClosureComponent<Attrs> = () => {
       drawHeatingConsumptionCostChart(vnode);
     },
     view() {
-      return m("div.chart-container");
+      return [
+        m("p", "Expanation of HeatingConsumptionCost"),
+        m("div.chart-container"),
+      ];
     },
   };
 };
@@ -496,10 +481,9 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   drawScatterplotLine(
     chart,
     data,
-    "heatdegdays",
-    "consumption",
-    degreeDayScale,
-    consumptionScale,
+    "heatdegdays-consumption",
+    (d) => degreeDayScale(d.heatdegdays),
+    (d) => consumptionScale(d.consumption),
     COLOR.consumption,
     COLOR.month,
     tooltip,
@@ -526,7 +510,7 @@ const AggregatedDataPlot = {
       ? [
           m(
             "div.card-panel",
-            m(AggregatedD3, {
+            m(HeatingConsumptionCost, {
               aggregatedData: AppState.aggregatedStationData,
               clientHeight: 400,
             }),
