@@ -392,16 +392,25 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
 const HeatingConsumptionCost: m.ClosureComponent<Attrs> = () => {
   return {
     oncreate(vnode: m.VnodeDOM<Attrs>) {
-      drawHeatingConsumptionCostChart(vnode);
+      AppState.aggregatedStationData.length > 0 &&
+        drawHeatingConsumptionCostChart(vnode);
     },
     onupdate(vnode: m.VnodeDOM<Attrs>) {
-      drawHeatingConsumptionCostChart(vnode);
+      AppState.aggregatedStationData.length > 0 &&
+        drawHeatingConsumptionCostChart(vnode);
     },
     view() {
-      return [
-        m("p", "Expanation of HeatingConsumptionCost"),
-        m("div.chart-container"),
-      ];
+      return m(
+        "div.chart-container",
+        m(
+          "p",
+          "The gray bars represent heating degree days in each billing period. ",
+          "The blue consumption bars closely track heating degree days when ",
+          "one has electric heat. The yellow dots are actual cost; cost and ",
+          "consumption may differ when, for instance, consumption is ",
+          "estimated rather than actual.",
+        ),
+      );
     },
   };
 };
@@ -501,31 +510,45 @@ const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
       drawHeatingConsumptionChart(vnode);
     },
     view() {
-      return m("div.chart-container");
+      return m(
+        "div.chart-container",
+        m(
+          "p",
+          "The dotted line traces the relationship between heating degree ",
+          "days and consumption over time. Mouse over individual points for ",
+          "the corresponding date.",
+        ),
+      );
     },
   };
 };
 
 const AggregatedDataPlot = {
-  view: () =>
-    AppState.aggregatedStationData.length > 0
-      ? [
-          m(
-            "div.card-panel",
-            m(HeatingConsumptionCost, {
-              aggregatedData: AppState.aggregatedStationData,
-              clientHeight: 400,
-            }),
-          ),
-          m(
-            "div.card-panel",
-            m(HeatingConsumption, {
-              aggregatedData: AppState.aggregatedStationData,
-              clientHeight: 0,
-            }),
-          ),
-        ]
-      : m("p", "No data available"),
+  view: () => [
+    m(
+      "div.card-panel",
+      m(
+        "p",
+        m("strong", "Heating degree days, consumption, and cost over time"),
+      ),
+      AppState.aggregatedStationData.length === 0
+        ? m("div.d3-empty-chart", "Select hydro and climate data.")
+        : m(HeatingConsumptionCost, {
+            aggregatedData: AppState.aggregatedStationData,
+            clientHeight: 400,
+          }),
+    ),
+    m(
+      "div.card-panel",
+      m("p", m("strong", "Heating degree days and consumption")),
+      AppState.aggregatedStationData.length === 0
+        ? m("div.d3-empty-chart", "Select hydro and climate data.")
+        : m(HeatingConsumption, {
+            aggregatedData: AppState.aggregatedStationData,
+            clientHeight: 0,
+          }),
+    ),
+  ],
 };
 
 export default AggregatedDataPlot;
