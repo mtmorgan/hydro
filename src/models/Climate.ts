@@ -1,6 +1,9 @@
 import m from "mithril";
 import AppState from "./AppState";
 import { xmlNumber, xmlString } from "../services/xmlInput";
+import { memoizedJSONRequest } from "../utils/memoize";
+import { FeatureCollection } from "geojson";
+import { Stations } from "./Stations";
 import { Status } from "./types";
 
 export interface StationRecord {
@@ -16,20 +19,73 @@ export interface StationRecord {
 }
 
 export interface ClimateStation {
-  stationId: string | null;
-  years: number[];
+  climateId: string | null;
   stationInformation: {
     name: string | null;
-    provinceOrTerritory: string | null;
-    stationOperator: string | null;
     latitude: number | null;
     longitude: number | null;
     elevation: number | null;
   };
   stationData: StationRecord[];
   status: Status;
+  error: string;
   load: (climateStationId: string) => Promise<void>;
 }
+
+interface DailyDataProperties {
+  LOCAL_DATE: string; // E.g., "2022-01-01 00:00:00"
+  COOLING_DEGREE_DAYS: number;
+  HEATING_DEGREE_DAYS: number;
+  MEAN_TEMPERATURE: number;
+  TOTAL_PRECIPITATION: number;
+}
+
+const dailyDataPropertyMap: Record<keyof DailyDataProperties, undefined> = {
+  LOCAL_DATE: undefined,
+  MEAN_TEMPERATURE: undefined,
+  TOTAL_PRECIPITATION: undefined,
+  COOLING_DEGREE_DAYS: undefined,
+  HEATING_DEGREE_DAYS: undefined,
+};
+
+const requestDailyData = async (climateId: string) => {
+  Climate.status = Status.LOADING;
+  const from = new Date("2022-01-01").toISOString();
+  const dateInterval = `${from}/..`;
+  const properties = Object.keys(dailyDataPropertyMap).join(",");
+  const url =
+    "https://api.weather.gc.ca/collections/climate-daily/items" +
+    `?CLIMATE_IDENTIFIER=${climateId}` +
+    `&datetime=${encodeURIComponent(dateInterval)}` +
+    `&properties=${properties}` +
+    `&sortby=LOCAL_DATE` +
+    `&skipGeometry=true&f=json&limit=10000`;
+
+  try {
+    const data = await memoizedJSONRequest<
+      FeatureCollection<null, DailyDataProperties>
+    >(url, "dailyData");
+
+    Climate.stationData = data.features.map((day) => {
+      const date = new Date(day.properties.LOCAL_DATE);
+      return {
+        day: date.getDate(),
+        month: date.getMonth() + 1,
+        year: date.getFullYear(),
+        timestamp: date.getTime(),
+        meantemp: day.properties.MEAN_TEMPERATURE,
+        heatDegDays: day.properties.HEATING_DEGREE_DAYS,
+        coolDegDays: day.properties.COOLING_DEGREE_DAYS,
+        totalPrecipitation: day.properties.TOTAL_PRECIPITATION,
+      } as StationRecord;
+    });
+    Climate.status = Status.READY;
+  } catch (err) {
+    Climate.error = "Cache / Network Error: " + err;
+    Climate.status = Status.ERROR;
+    console.log(Climate.error);
+  }
+};
 
 /**
  * Memoizer for XMLDocuments in localStorage.
@@ -144,16 +200,16 @@ async function loadClimateData(
 
   // Base object from the first year for station info
   const station: ClimateStation = {
-    stationId: stationId,
-    years: years,
+    climateId: stationId,
     stationInformation: extractStationInfo(xmlDocs[0]), // Get info once
     stationData: [], // To be filled
     status: Status.IDLE,
+    error: "",
     load: async () => {},
   };
 
   // Extract and flatten stationData arrays
-  station.stationData = xmlDocs.flatMap((doc) => extractStationData(doc));
+  await requestDailyData(stationId);
 
   // Sort to ensure chronological order if years arrived out of sequence
   const today = new Date();
@@ -176,22 +232,36 @@ const years = (start: number, end: number): number[] => {
 };
 
 let Climate = {
-  stationId: null as string | null,
+  status: Status.IDLE,
+  error: "",
+  climateId: null as string | null,
   stationInformation: null as ClimateStation["stationInformation"] | null,
   stationData: [] as ClimateStation["stationData"],
   load: async (climateStationId) => {
     Climate.status = Status.LOADING;
     if (climateStationId !== localStorage.getItem("stationId")) {
       // Flush cache, since it is only large enough for a couple of stationIds
-      localStorage.clear();
+      localStorage.removeItem("dailyData");
       localStorage.setItem("stationId", climateStationId);
     }
-    const station = await loadClimateData(climateStationId, years(2020, 2026));
-    Climate.stationId = station.stationId;
-    Climate.years = station.years;
-    Climate.stationInformation = station.stationInformation;
-    Climate.stationData = station.stationData;
-    Climate.status = station.status;
+
+    const stationRecord = Stations.getByClimateId(climateStationId);
+    if (stationRecord === undefined || stationRecord === null) {
+      Climate.error = `Unknown climate station identifier ${climateStationId}`;
+      Climate.status = Status.ERROR;
+      return;
+    }
+
+    await requestDailyData(climateStationId);
+    Climate.climateId = stationRecord.ClimateId;
+    Climate.stationInformation = {
+      elevation: stationRecord.Elevation,
+      latitude: stationRecord.Latitude,
+      longitude: stationRecord.Longitude,
+      name: stationRecord.Name,
+    };
+
+    Climate.status = Status.READY;
     AppState.recompute();
   },
 } as ClimateStation;

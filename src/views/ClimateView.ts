@@ -18,26 +18,18 @@ const labelValueView: m.Component<LabelValueViewAttrs> = {
 };
 
 interface StationViewAttrs {
-  stationId: string | null;
+  climateId: string | null;
   stationInformation: ClimateStation["stationInformation"];
 }
 
 const StationView: m.Component<StationViewAttrs> = {
   view: ({ attrs }) => {
-    const { stationId, stationInformation } = attrs;
+    const { climateId, stationInformation } = attrs;
 
     return m("div.card-panel", [
       m("p", [
-        m(labelValueView, { label: "Id", value: stationId }),
+        m(labelValueView, { label: "Id", value: climateId }),
         m(labelValueView, { label: "Name", value: stationInformation.name }),
-        m(labelValueView, {
-          label: "Province or territory",
-          value: stationInformation.provinceOrTerritory,
-        }),
-        m(labelValueView, {
-          label: "Operator",
-          value: stationInformation.stationOperator,
-        }),
         m(labelValueView, {
           label: "Latitude, longitude",
           value: `${stationInformation.latitude}, ${stationInformation.longitude}`,
@@ -147,7 +139,7 @@ const ClimateView = () => {
           case Status.READY:
             return [
               m(StationView, {
-                stationId: Climate.stationId,
+                climateId: Climate.climateId,
                 stationInformation: Climate.stationInformation,
               }),
               m(StationDataView, { stationData: Climate.stationData }),
@@ -174,15 +166,13 @@ const ClimateView = () => {
             },
             "all climate stations",
           ),
-          " with historical data. The file used in the map is  ",
+          " with historical data. Data are retieved using the ",
           m(
             "a",
-            {
-              href: "https://collaboration.cmc.ec.gc.ca/cmc/climate/Get_More_Data_Plus_de_donnees/",
-            },
-            "Station Inventory EN.csv",
+            { href: "https://api.weather.gc.ca/" },
+            "MSC GeoMet - GeoMet - OGC - API",
           ),
-          ".",
+          " service.",
         ]),
 
         m(StationMap, {
