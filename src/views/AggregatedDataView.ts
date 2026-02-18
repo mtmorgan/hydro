@@ -47,7 +47,7 @@ const CLIMATE_TABLE_COLUMNS = [
   ...col,
 })) as DataTableColumn<AggregatedResult>[];
 
-export const AggregatedDataTable = {
+const AggregatedDataTable = {
   view: () => [
     m(
       "p",
@@ -68,3 +68,5 @@ export const AggregatedDataTable = {
     ]),
   ],
 };
+
+export default AggregatedDataTable;

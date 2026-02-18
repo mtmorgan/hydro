@@ -1,5 +1,5 @@
 import m from "mithril";
-import Climate, { type ClimateStation } from "../models/Climate";
+import Climate, { StationRecord } from "../models/Climate";
 import { StationMap } from "./StationMap";
 import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
@@ -17,31 +17,24 @@ const labelValueView: m.Component<LabelValueViewAttrs> = {
   },
 };
 
-interface StationViewAttrs {
-  stationId: string | null;
-  stationInformation: ClimateStation["stationInformation"];
-}
-
-const StationView: m.Component<StationViewAttrs> = {
-  view: ({ attrs }) => {
-    const { stationId, stationInformation } = attrs;
+const StationView: m.Component = {
+  view: () => {
+    const { climateId, stationInformation } = Climate;
+    if (stationInformation === null) return;
 
     return m("div.card-panel", [
       m("p", [
-        m(labelValueView, { label: "Id", value: stationId }),
+        m(labelValueView, { label: "Id", value: climateId }),
         m(labelValueView, { label: "Name", value: stationInformation.name }),
         m(labelValueView, {
-          label: "Province or territory",
-          value: stationInformation.provinceOrTerritory,
+          label: "Longitude",
+          value: stationInformation.longitude.toFixed(2),
         }),
         m(labelValueView, {
-          label: "Operator",
-          value: stationInformation.stationOperator,
+          label: "Latitude",
+          value: stationInformation.latitude.toFixed(2),
         }),
-        m(labelValueView, {
-          label: "Latitude, longitude",
-          value: `${stationInformation.latitude}, ${stationInformation.longitude}`,
-        }),
+
         m(labelValueView, {
           label: "Elevation",
           value: `${stationInformation.elevation} m`,
@@ -51,13 +44,9 @@ const StationView: m.Component<StationViewAttrs> = {
   },
 };
 
-interface StationDataViewAttrs {
-  stationData: ClimateStation["stationData"];
-}
-
-const StationDataView: m.Component<StationDataViewAttrs> = {
-  view: ({ attrs }) => {
-    const { stationData } = attrs;
+const StationDataView: m.Component = {
+  view: () => {
+    const { stationData } = Climate;
     const nMissing = stationData.filter((day) => day.meantemp === null).length;
     if (nMissing === stationData.length) {
       return m(
@@ -65,16 +54,8 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
         "Error: No valid climate data available.",
       );
     }
-    const startDate = formatDate(
-      stationData[0].year,
-      stationData[0].month,
-      stationData[0].day,
-    );
-    const endDate = formatDate(
-      stationData[stationData.length - 1].year,
-      stationData[stationData.length - 1].month,
-      stationData[stationData.length - 1].day,
-    );
+    const startDate = formatDate(stationData[0].timestamp);
+    const endDate = formatDate(stationData[stationData.length - 1].timestamp);
     return m("div.card-panel", [
       m("p", [
         m(labelValueView, {
@@ -97,15 +78,14 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
         }),
       ]),
       m(".table-scroll-container", [
-        m(DataTable<ClimateStation["stationData"][0]>, {
+        m(DataTable<StationRecord>, {
           className: "highlight",
           data: stationData,
           columns: [
             {
               key: "date",
               title: "Date",
-              render: (row: ClimateStation["stationData"][0]) =>
-                formatDate(row.year, row.month, row.day),
+              render: (row) => formatDate(row.timestamp),
             },
             { key: "meantemp", title: "Mean Temp (°C)", field: "meantemp" },
             {
@@ -145,13 +125,7 @@ const ClimateView = () => {
             ]);
 
           case Status.READY:
-            return [
-              m(StationView, {
-                stationId: Climate.stationId,
-                stationInformation: Climate.stationInformation,
-              }),
-              m(StationDataView, { stationData: Climate.stationData }),
-            ];
+            return [m(StationView), m(StationDataView)];
 
           case Status.IDLE:
           default:
@@ -174,20 +148,18 @@ const ClimateView = () => {
             },
             "all climate stations",
           ),
-          " with historical data. The file used in the map is  ",
+          " with historical data. Data are retieved using the ",
           m(
             "a",
-            {
-              href: "https://collaboration.cmc.ec.gc.ca/cmc/climate/Get_More_Data_Plus_de_donnees/",
-            },
-            "Station Inventory EN.csv",
+            { href: "https://api.weather.gc.ca/" },
+            "MSC GeoMet - GeoMet - OGC - API",
           ),
-          ".",
+          " service.",
         ]),
 
         m(StationMap, {
-          onSelect: (stationId) => {
-            Climate.load(stationId);
+          onSelect: (climateId) => {
+            Climate.load(climateId);
             m.redraw();
           },
         }),

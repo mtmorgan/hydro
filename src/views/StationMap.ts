@@ -1,7 +1,7 @@
 import m from "mithril";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css"; // Ensure CSS is imported
-import { Stations, StationRecord } from "../models/Stations";
+import Stations, { StationRecord } from "../models/Stations";
 import { lollipopIcon } from "../utils/map";
 
 interface StationMapAttrs {
@@ -13,7 +13,9 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
   let map: L.Map;
 
   return {
-    oncreate: (vnode) => {
+    oncreate: async (vnode) => {
+      await Stations.init();
+
       // Initialize map on the DOM element
       map = L.map(vnode.dom as HTMLElement).setView([43.6532, -79.3832], 7);
 
@@ -23,16 +25,17 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
       }).addTo(map);
 
       // Add markers for all stations
-      Stations.list.forEach((s: StationRecord) => {
-        const marker = L.marker([s.Latitude, s.Longitude], {
-          icon: lollipopIcon,
-        }).addTo(map);
+      Stations.list &&
+        Stations.list.forEach((s: StationRecord) => {
+          const marker = L.marker([s.Latitude, s.Longitude], {
+            icon: lollipopIcon,
+          }).addTo(map);
 
-        // Construct a detailed popup
-        marker.bindPopup(`
+          // Construct a detailed popup
+          marker.bindPopup(`
                     <div class="station-popup">
                         <b>${s.Name}</b><br>
-                        ID: ${s.StationId}<br>
+                        ID: ${s.ClimateId}<br>
                         Elev: ${s.Elevation}m<br>
                         <small>${s.Latitude.toFixed(4)}, ${s.Longitude.toFixed(
                           4,
@@ -40,8 +43,8 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
                     </div>
                 `);
 
-        marker.on("click", () => vnode.attrs.onSelect(s.StationId));
-      });
+          marker.on("click", () => vnode.attrs.onSelect(s.ClimateId));
+        });
     },
 
     onremove: () => {

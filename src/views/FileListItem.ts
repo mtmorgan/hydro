@@ -5,7 +5,7 @@ interface FileListItemAttrs {
   name: string;
 }
 
-export const FileListItem: m.Component<FileListItemAttrs> = {
+const FileListItem: m.Component<FileListItemAttrs> = {
   view: ({ attrs }) =>
     m(
       "div",
@@ -25,3 +25,5 @@ export const FileListItem: m.Component<FileListItemAttrs> = {
       ],
     ),
 };
+
+export default FileListItem;
