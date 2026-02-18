@@ -1,6 +1,7 @@
 import { type StationRecord } from "../models/Climate";
 import { type EnergyUseRecord } from "../models/EnergyUse";
 import { type AggregatedResult } from "../models/AppState";
+import { formatDate } from "../utils/date";
 
 /*
  * Aggregate climate data to date intervals from hydro
@@ -39,7 +40,7 @@ export const aggregateStationRecords = (
 
       acc.results.push({
         timestamp: energyRecord.timestamp,
-        start: energyRecord.start_formatted as string,
+        start: formatDate(energyRecord.timestamp),
         days: energyRecord.days,
         consumption: energyRecord.consumption,
         cost: energyRecord.cost,

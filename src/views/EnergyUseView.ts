@@ -4,6 +4,7 @@ import { DataTable, DataTableColumn } from "mithril-materialized";
 import EnergyUse, { type EnergyUseRecord } from "../models/EnergyUse";
 import { inputFileKey } from "../services/xmlInput";
 import { FileListItem } from "./FileListItem";
+import { formatDate } from "../utils/date";
 
 const placeholder = "Hydro1_Electric_60_minute XML file";
 
@@ -22,14 +23,12 @@ const EnergyUseDisplay: m.Component<EnergyUseDisplayAttrs> = {
       );
     }
 
-    // Simplify date - create a new array with formatted dates
-    energyUseData.forEach((entry: EnergyUseRecord) => {
-      entry.start_formatted = new Intl.DateTimeFormat("en-CA").format(
-        entry.start,
-      );
-    });
     const columns: DataTableColumn<EnergyUseRecord>[] = [
-      { key: "start", title: "Start Date", field: "start_formatted" },
+      {
+        key: "start",
+        title: "Start Date",
+        render: (row: EnergyUseRecord) => formatDate(row.timestamp),
+      },
       { key: "days", title: "Days", field: "days" },
       { key: "cost", title: "Cost ($)", field: "cost" },
       { key: "consumption", title: "Consumption (kWh)", field: "consumption" },

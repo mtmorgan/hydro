@@ -81,25 +81,10 @@ const xpathString = (parent: Element, xpath: string): string => {
   return result.stringValue;
 };
 
-const xmlNumber = (el: Element | null): number | null => {
-  const text = el?.textContent?.trim();
-  if (!text) return null; // Catches <tag/> and <tag></tag>
-
-  const num = parseFloat(text);
-  return isNaN(num) ? null : num; // Catches non-numeric junk
-};
-
-const xmlString = (el: Element | null): string | null => {
-  const text = el?.textContent?.trim();
-  return text ? text : null;
-};
-
 export {
   inputXMLFile,
   inputFileKey,
   incrementInputFileKey,
   xpathNumber,
   xpathString,
-  xmlNumber,
-  xmlString,
 };

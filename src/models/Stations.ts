@@ -63,6 +63,7 @@ const requestStations = async () => {
     console.log(Stations.error);
   }
 };
+
 export const Stations = {
   stations: null as FeatureCollection<Point, ClimateStationProperties> | null,
   status: Status.IDLE,

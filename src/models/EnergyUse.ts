@@ -11,7 +11,6 @@ export interface EnergyUseRecord {
   timestamp: number;
   duration: number;
   start: Date;
-  start_formatted?: string;
   days: number;
   cost: number;
   consumption: number;

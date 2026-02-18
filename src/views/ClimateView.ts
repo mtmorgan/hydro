@@ -31,9 +31,14 @@ const StationView: m.Component<StationViewAttrs> = {
         m(labelValueView, { label: "Id", value: climateId }),
         m(labelValueView, { label: "Name", value: stationInformation.name }),
         m(labelValueView, {
-          label: "Latitude, longitude",
-          value: `${stationInformation.latitude}, ${stationInformation.longitude}`,
+          label: "Longitude",
+          value: stationInformation.longitude.toFixed(2),
         }),
+        m(labelValueView, {
+          label: "Latitude",
+          value: stationInformation.latitude.toFixed(2),
+        }),
+
         m(labelValueView, {
           label: "Elevation",
           value: `${stationInformation.elevation} m`,
@@ -57,16 +62,8 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
         "Error: No valid climate data available.",
       );
     }
-    const startDate = formatDate(
-      stationData[0].year,
-      stationData[0].month,
-      stationData[0].day,
-    );
-    const endDate = formatDate(
-      stationData[stationData.length - 1].year,
-      stationData[stationData.length - 1].month,
-      stationData[stationData.length - 1].day,
-    );
+    const startDate = formatDate(stationData[0].timestamp);
+    const endDate = formatDate(stationData[stationData.length - 1].timestamp);
     return m("div.card-panel", [
       m("p", [
         m(labelValueView, {
@@ -96,8 +93,7 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
             {
               key: "date",
               title: "Date",
-              render: (row: ClimateStation["stationData"][0]) =>
-                formatDate(row.year, row.month, row.day),
+              render: (row) => formatDate(row.timestamp),
             },
             { key: "meantemp", title: "Mean Temp (°C)", field: "meantemp" },
             {
@@ -176,8 +172,8 @@ const ClimateView = () => {
         ]),
 
         m(StationMap, {
-          onSelect: (stationId) => {
-            Climate.load(stationId);
+          onSelect: (climateId) => {
+            Climate.load(climateId);
             m.redraw();
           },
         }),
