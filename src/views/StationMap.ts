@@ -1,7 +1,7 @@
 import m from "mithril";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css"; // Ensure CSS is imported
-import { Stations, StationRecord } from "../models/Stations";
+import Stations, { StationRecord } from "../models/Stations";
 import { lollipopIcon } from "../utils/map";
 
 interface StationMapAttrs {

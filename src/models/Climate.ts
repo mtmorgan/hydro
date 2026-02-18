@@ -1,7 +1,7 @@
 import AppState from "./AppState";
+import Stations from "./Stations";
 import { memoizedJSONRequest } from "../utils/memoize";
 import { FeatureCollection } from "geojson";
-import { Stations } from "./Stations";
 import { Status } from "./types";
 
 export interface StationRecord {
@@ -13,18 +13,11 @@ export interface StationRecord {
   totalPrecipitation: number | null;
 }
 
-export interface ClimateStation {
-  climateId: string;
-  stationInformation: {
-    name: string;
-    latitude: number;
-    longitude: number;
-    elevation: number;
-  };
-  stationData: StationRecord[];
-  status: Status;
-  error: string;
-  load: (climateId: string) => Promise<void>;
+export interface StationInformation {
+  name: string;
+  latitude: number;
+  longitude: number;
+  elevation: number;
 }
 
 interface DailyDataProperties {
@@ -83,13 +76,14 @@ const requestDailyData = async (climateId: string) => {
  * State for climate data
  */
 
-let Climate = {
+const Climate = {
   status: Status.IDLE,
   error: "",
   climateId: null as string | null,
-  stationInformation: null as ClimateStation["stationInformation"] | null,
-  stationData: [] as ClimateStation["stationData"],
-  load: async (climateId) => {
+  stationInformation: null as StationInformation | null,
+  stationData: [] as StationRecord[],
+
+  load: async (climateId: string) => {
     Climate.status = Status.LOADING;
     if (climateId !== localStorage.getItem("climateId")) {
       // Flush cache, since it is only large enough for a couple of stationIds
@@ -116,6 +110,6 @@ let Climate = {
     Climate.status = Status.READY;
     AppState.recompute();
   },
-} as ClimateStation;
+};
 
 export default Climate;

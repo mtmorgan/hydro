@@ -1,5 +1,5 @@
 import m from "mithril";
-import Climate, { type ClimateStation } from "../models/Climate";
+import Climate, { StationRecord } from "../models/Climate";
 import { StationMap } from "./StationMap";
 import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
@@ -17,14 +17,10 @@ const labelValueView: m.Component<LabelValueViewAttrs> = {
   },
 };
 
-interface StationViewAttrs {
-  climateId: string | null;
-  stationInformation: ClimateStation["stationInformation"];
-}
-
-const StationView: m.Component<StationViewAttrs> = {
-  view: ({ attrs }) => {
-    const { climateId, stationInformation } = attrs;
+const StationView: m.Component = {
+  view: () => {
+    const { climateId, stationInformation } = Climate;
+    if (stationInformation === null) return;
 
     return m("div.card-panel", [
       m("p", [
@@ -48,13 +44,9 @@ const StationView: m.Component<StationViewAttrs> = {
   },
 };
 
-interface StationDataViewAttrs {
-  stationData: ClimateStation["stationData"];
-}
-
-const StationDataView: m.Component<StationDataViewAttrs> = {
-  view: ({ attrs }) => {
-    const { stationData } = attrs;
+const StationDataView: m.Component = {
+  view: () => {
+    const { stationData } = Climate;
     const nMissing = stationData.filter((day) => day.meantemp === null).length;
     if (nMissing === stationData.length) {
       return m(
@@ -86,7 +78,7 @@ const StationDataView: m.Component<StationDataViewAttrs> = {
         }),
       ]),
       m(".table-scroll-container", [
-        m(DataTable<ClimateStation["stationData"][0]>, {
+        m(DataTable<StationRecord>, {
           className: "highlight",
           data: stationData,
           columns: [
@@ -133,13 +125,7 @@ const ClimateView = () => {
             ]);
 
           case Status.READY:
-            return [
-              m(StationView, {
-                climateId: Climate.climateId,
-                stationInformation: Climate.stationInformation,
-              }),
-              m(StationDataView, { stationData: Climate.stationData }),
-            ];
+            return [m(StationView), m(StationDataView)];
 
           case Status.IDLE:
           default:

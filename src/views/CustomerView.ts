@@ -1,8 +1,8 @@
 import m from "mithril";
 import { FileInput } from "mithril-materialized";
 import Customer, { type Address } from "../models/Customer";
+import FileListItem from "./FileListItem";
 import { inputFileKey } from "../services/xmlInput";
-import { FileListItem } from "./FileListItem";
 
 const placeholder = "Hydro1_Retail_Customer XML file";
 

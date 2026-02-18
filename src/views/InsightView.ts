@@ -1,11 +1,10 @@
 import m from "mithril";
-import { FileListItem } from "./FileListItem";
-import { AggregatedDataTable } from "./AggregatedDataView";
+import AggregatedDataPlot from "./AggregatedDataPlot";
+import AggregatedDataTable from "./AggregatedDataView";
 import Climate from "../models/Climate";
 import Customer from "../models/Customer";
 import EnergyUse from "../models/EnergyUse";
-import { Status } from "../models/types";
-import AggregatedDataPlot from "./AggregatedDataPlot";
+import FileListItem from "./FileListItem";
 
 const InsightView: m.Component = {
   view: () => [
@@ -22,7 +21,7 @@ const InsightView: m.Component = {
         // Indented file names: one per line
         EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       ],
-      Climate.status === Status.READY &&
+      Climate.stationInformation &&
         m("div", [
           m("strong", "Climate Station: "),
           Climate.stationInformation.name,

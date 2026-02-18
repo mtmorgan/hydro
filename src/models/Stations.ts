@@ -64,7 +64,7 @@ const requestStations = async () => {
   }
 };
 
-export const Stations = {
+const Stations = {
   stations: null as FeatureCollection<Point, ClimateStationProperties> | null,
   status: Status.IDLE,
   error: "",
@@ -89,3 +89,5 @@ export const Stations = {
   getByClimateId: (climateId: string) =>
     Stations.list && Stations.list.find((s) => s.ClimateId === climateId),
 };
+
+export default Stations;

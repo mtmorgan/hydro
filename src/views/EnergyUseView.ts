@@ -2,8 +2,8 @@ import m from "mithril";
 import { FileInput } from "mithril-materialized";
 import { DataTable, DataTableColumn } from "mithril-materialized";
 import EnergyUse, { type EnergyUseRecord } from "../models/EnergyUse";
+import FileListItem from "./FileListItem";
 import { inputFileKey } from "../services/xmlInput";
-import { FileListItem } from "./FileListItem";
 import { formatDate } from "../utils/date";
 
 const placeholder = "Hydro1_Electric_60_minute XML file";
