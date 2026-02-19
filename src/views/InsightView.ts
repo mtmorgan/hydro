@@ -5,15 +5,16 @@ import Climate from "../models/Climate";
 import Customer from "../models/Customer";
 import EnergyUse from "../models/EnergyUse";
 import FileListItem from "./FileListItem";
+import { Status } from "../models/types";
 
 const InsightView: m.Component = {
   view: () => [
     m("div.card-panel", { style: "line-height: 1.5;" }, [
-      Customer.ready && [
+      Customer.status === Status.READY && [
         m("div", [m("strong", "Customer: "), Customer.address?.name]),
         m(FileListItem, { name: Customer.fileName as string }),
       ],
-      EnergyUse.ready && [
+      EnergyUse.status === Status.READY && [
         m("div", [
           m("strong", "Energy Use: "),
           `${EnergyUse.energyUse.length} months`,

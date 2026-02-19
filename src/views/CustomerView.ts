@@ -1,13 +1,9 @@
 import m from "mithril";
-import { FileInput } from "mithril-materialized";
-import Customer, { type Address } from "../models/Customer";
+import Customer, { type CustomerRecord } from "../models/Customer";
 import FileListItem from "./FileListItem";
-import { inputFileKey } from "../services/xmlInput";
-
-const placeholder = "Hydro1_Retail_Customer XML file";
 
 interface AddressViewAttrs {
-  addressData: Address;
+  addressData: CustomerRecord;
 }
 
 export const AddressView: m.Component<AddressViewAttrs> = {
@@ -40,18 +36,10 @@ export const AddressView: m.Component<AddressViewAttrs> = {
 const CustomerView: m.Component = {
   view: () => [
     m("div", [
-      m(FileInput, {
-        id: "customer",
-        key: inputFileKey,
-        placeholder: Customer.fileName || placeholder,
-        multiple: false,
-        accept: ["application/xml"],
-        onchange: Customer.loadXml,
-      }),
+      Customer.address
+        ? m(AddressView, { addressData: Customer.address })
+        : m("p.grey-text", "No customer data loaded."),
     ]),
-    Customer.address
-      ? m(AddressView, { addressData: Customer.address })
-      : m("p.grey-text", "No customer data loaded."),
   ],
 };
 

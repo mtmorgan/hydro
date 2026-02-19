@@ -1,12 +1,8 @@
 import m from "mithril";
-import { FileInput } from "mithril-materialized";
 import { DataTable, DataTableColumn } from "mithril-materialized";
 import EnergyUse, { type EnergyUseRecord } from "../models/EnergyUse";
 import FileListItem from "./FileListItem";
-import { inputFileKey } from "../services/xmlInput";
 import { formatDate } from "../utils/date";
-
-const placeholder = "Hydro1_Electric_60_minute XML file";
 
 interface EnergyUseDisplayAttrs {
   energyUseData: EnergyUseRecord[];
@@ -56,17 +52,6 @@ const EnergyUseDisplay: m.Component<EnergyUseDisplayAttrs> = {
 
 const EnergyUseView: m.Component = {
   view: () => [
-    m("div", [
-      m(FileInput, {
-        id: "energy-use-input",
-        key: inputFileKey,
-        placeholder: EnergyUse.fileName.join(", ") || placeholder,
-        multiple: true,
-        accept: ["application/xml"],
-        onchange: EnergyUse.loadXml,
-        resetOnChange: true,
-      }),
-    ]),
     EnergyUse.energyUse.length > 0
       ? m(EnergyUseDisplay, { energyUseData: EnergyUse.energyUse })
       : m("p.grey-text", "No energy use data loaded."),

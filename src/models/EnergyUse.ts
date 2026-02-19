@@ -1,11 +1,5 @@
-import m from "mithril";
-import AppState from "./AppState";
-import {
-  inputXMLFile,
-  incrementInputFileKey,
-  xpathNumber,
-  xpathString,
-} from "../services/xmlInput";
+import { xpathNumber, xpathString } from "../services/xmlInput";
+import { Status } from "./types";
 
 export interface EnergyUseRecord {
   timestamp: number;
@@ -17,7 +11,7 @@ export interface EnergyUseRecord {
   reading: string;
 }
 
-const inputEnergyUseXML = (xmlDoc: Document): EnergyUseRecord[] => {
+export const parseEnergyUseXML = (xmlDoc: Document): EnergyUseRecord[] => {
   const usageRecord = (usage: Element): EnergyUseRecord => {
     const start = xpathNumber(usage, "./espi:billingPeriod/espi:start");
     const duration = xpathNumber(usage, "./espi:billingPeriod/espi:duration");
@@ -47,21 +41,22 @@ const inputEnergyUseXML = (xmlDoc: Document): EnergyUseRecord[] => {
   return Array.from(usageSummary).map(usageRecord);
 };
 
-let EnergyUse = {
-  ready: false,
+interface EnergyUseInput {
+  data: EnergyUseRecord[];
+  file: File;
+}
+
+const EnergyUse = {
+  status: Status.IDLE,
   fileName: [] as string[],
   energyUse: [] as EnergyUseRecord[],
-  loadXml: async (files: FileList) => {
-    EnergyUse.fileName = [];
-    EnergyUse.energyUse = [];
-    EnergyUse.ready = false;
-    const input = await inputXMLFile(inputEnergyUseXML, files);
-    if (input.error) {
-      console.error("EnergyUse loadXML:", input.error);
-    }
-    EnergyUse.fileName = input.fileNames;
-    // De-duplicate keeping timestamp & longest duration
-    EnergyUse.energyUse = input.content
+
+  init: (energyUseInput: EnergyUseInput[]) => {
+    EnergyUse.status = Status.LOADING;
+    EnergyUse.fileName = energyUseInput.map((elt) => elt.file.name);
+    // De-duplicate keeping timestamp & longest durationf
+    EnergyUse.energyUse = energyUseInput
+      .map((elt) => elt.data)
       .flat()
       .reduce<Map<number, EnergyUseRecord>>((acc, current) => {
         const existing = acc.get(current.timestamp);
@@ -73,10 +68,7 @@ let EnergyUse = {
       .values()
       .toArray()
       .toSorted((a, b) => a.timestamp - b.timestamp);
-    EnergyUse.ready = true;
-    AppState.recompute();
-    incrementInputFileKey();
-    m.redraw();
+    EnergyUse.status = Status.READY;
   },
 };
 
