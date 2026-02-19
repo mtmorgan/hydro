@@ -1,12 +1,7 @@
-import m from "mithril";
-import AppState from "./AppState";
-import {
-  inputXMLFile,
-  incrementInputFileKey,
-  xpathString,
-} from "../services/xmlInput";
+import { xpathString } from "../services/xmlInput";
+import { Status } from "./types";
 
-export interface Address {
+export interface CustomerRecord {
   organisationName: string;
   number: string;
   name: string;
@@ -15,7 +10,7 @@ export interface Address {
   postalCode: string;
 }
 
-const inputRetailXML = (xmlDoc: Document): Address => {
+export const parseRetailXML = (xmlDoc: Document): CustomerRecord => {
   const serviceSupplier = xmlDoc.getElementsByTagName(
     "cust:ServiceSupplier",
   )[0];
@@ -51,28 +46,21 @@ const inputRetailXML = (xmlDoc: Document): Address => {
   };
 };
 
+interface CustomerInput {
+  data: CustomerRecord;
+  file: File;
+}
+
 const Customer = {
-  ready: false,
+  status: Status.IDLE,
   fileName: null as string | null,
-  address: null as Address | null,
-  loadXml: async (files: FileList) => {
-    Customer.ready = false;
-    Customer.fileName = null;
-    Customer.address = null;
-    inputXMLFile(inputRetailXML, files)
-      .then((input) => {
-        if (input.error) {
-          console.error("Customer loadXML:", input.error);
-        }
-        Customer.fileName = files[0]?.name || null;
-        Customer.address = input.content[0];
-        Customer.ready = true;
-      })
-      .then(() => AppState.recompute())
-      .then(() => {
-        incrementInputFileKey();
-        m.redraw();
-      });
+  address: null as CustomerRecord | null,
+
+  init: (customerInput: CustomerInput[]) => {
+    if (customerInput.length == 0) return;
+    Customer.fileName = customerInput[0].file.name;
+    Customer.address = customerInput[0].data;
+    Customer.status = Status.READY;
   },
 };
 
