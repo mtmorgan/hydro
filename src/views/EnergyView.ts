@@ -5,7 +5,7 @@ import CustomerView from "./CustomerView";
 import EnergyUseView from "./EnergyUseView";
 import { inputFileKey } from "../services/xmlInput";
 
-const HydroView: m.Component = {
+const EnergyView: m.Component = {
   view: () => [
     m("p", [
       "Hydro One (Ontario Hydro) provides energy use data for the previous ",
@@ -42,4 +42,4 @@ const HydroView: m.Component = {
   ],
 };
 
-export default HydroView;
+export default EnergyView;
