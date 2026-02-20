@@ -38,7 +38,12 @@ const CustomerView: m.Component = {
     m("div", [
       Customer.address
         ? m(AddressView, { addressData: Customer.address })
-        : m("p.grey-text", "No customer data loaded."),
+        : m(
+            "p.grey-text",
+            "Choose a customer (",
+            m("code", "Hydro1_Retail_Customer_*.xml"),
+            ") file.",
+          ),
     ]),
   ],
 };

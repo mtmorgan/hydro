@@ -15,10 +15,10 @@ export interface AggregatedResult {
 const AppState = {
   aggregatedStationData: [] as AggregatedResult[],
   recompute: () => {
-    if (Climate.stationData.length > 0 && EnergyUse.energyUse.length > 0) {
+    if (Climate.stationData.length > 0 && EnergyUse.usageSummary.length > 0) {
       AppState.aggregatedStationData = aggregateStationRecords(
         Climate.stationData,
-        EnergyUse.energyUse,
+        EnergyUse.usageSummary,
       );
     }
   },

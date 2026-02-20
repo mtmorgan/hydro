@@ -17,7 +17,7 @@ const InsightView: m.Component = {
       EnergyUse.status === Status.READY && [
         m("div", [
           m("strong", "Energy Use: "),
-          `${EnergyUse.energyUse.length} months`,
+          `${EnergyUse.usageSummary.length} months`,
         ]),
         // Indented file names: one per line
         EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
