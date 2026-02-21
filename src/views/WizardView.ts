@@ -1,20 +1,15 @@
 import { Wizard, WizardStep } from "mithril-materialized";
 import m from "mithril";
+import IntroductionView from "./IntroductionView";
 import EnergyView from "./EnergyView";
 import ClimateView from "./ClimateView";
 import InsightView from "./InsightView";
 
 const steps: WizardStep[] = [
-  {
-    title: "Introduction",
-    vnode: () => m("p", "Content for step 1"),
-  },
+  { title: "Introduction", vnode: () => m(IntroductionView) },
   { title: "Hydro", vnode: () => m(EnergyView) },
   { title: "Climate", vnode: () => m(ClimateView) },
-  {
-    title: "Insights",
-    vnode: () => m(InsightView),
-  },
+  { title: "Insights", vnode: () => m(InsightView) },
 ];
 
 const WizardView: m.Component = {

@@ -85,7 +85,15 @@ const DailyHeatingConsumption: m.ClosureComponent<Attrs> = () => {
     onupdate: (vnode) => drawDailyHeatingConsumptionChart(vnode),
     onremove: () => observer.disconnect(),
     view: () => {
-      return m("div.chart-container", m("p", "FIXME: description."));
+      return m(
+        "div.chart-container",
+        m(
+          "p",
+          "Each point represents the heating degree days and energy ",
+          "consumption on a single day. Mouse over individual points for ",
+          "the corresponding date.",
+        ),
+      );
     },
   };
 };

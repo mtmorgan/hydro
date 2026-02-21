@@ -29,6 +29,7 @@ const EnergyView: m.Component = {
       m(FileInput, {
         id: "energy-use-input",
         key: inputFileKey,
+        label: "Files",
         placeholder: Energy.fileNames.join(", ") || "Hydro1_*.xml",
         multiple: true,
         accept: ["application/xml"],
