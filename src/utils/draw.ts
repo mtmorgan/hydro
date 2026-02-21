@@ -93,6 +93,124 @@ const selectTooltip = <T, D>(
   };
 };
 
+type AxisPosition = "bottom" | "left" | "right" | "right2";
+
+interface AxisStrategy {
+  factory: (scale: d3.AxisScale<d3.NumberValue>) => d3.Axis<d3.NumberValue>;
+  // Logic for D3 range: [0, w] for bottom, [h, 0] for left
+  range: (width: number, height: number) => [number, number];
+  // Translation for the <g> element that holds the axis line/ticks
+  axisTranslate: (width: number, height: number) => [number, number];
+  // Strategy for the text label
+  label: {
+    x: (width: number, height: number) => number;
+    y: (width: number, height: number) => number;
+    rotate: number;
+  };
+}
+
+const AXIS_CONFIG: Record<AxisPosition, AxisStrategy> = {
+  bottom: {
+    factory: d3.axisBottom,
+    range: (w) => [0, w],
+    axisTranslate: (_, h) => [0, h],
+    label: {
+      x: (w) => w / 2,
+      y: (_, h) => h + MARGIN.bottom - 15,
+      rotate: 0,
+    },
+  },
+  left: {
+    factory: d3.axisLeft,
+    range: (_, h) => [h, 0],
+    axisTranslate: () => [0, 0],
+    label: {
+      x: () => -MARGIN.left + 15,
+      y: (_, h) => h / 2,
+      rotate: -90,
+    },
+  },
+  right: {
+    factory: d3.axisRight,
+    range: (_, h) => [h, 0],
+    axisTranslate: (w) => [w, 0],
+    label: {
+      x: (w) => w + 40,
+      y: (_, h) => h / 2,
+      rotate: -90,
+    },
+  },
+  right2: {
+    factory: d3.axisRight,
+    range: (_, h) => [h, 0],
+    axisTranslate: (w) => [w + 60, 0],
+    label: {
+      x: (w) => w + 60 + 40,
+      y: (_, h) => h / 2,
+      rotate: -90,
+    },
+  },
+};
+
+export const drawAxisSet = (
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  position: AxisPosition,
+  values: number[],
+  label: string,
+  width: number,
+  height: number,
+  fill: string,
+  className: string = "chart",
+  tickFormat: string = ".2s",
+) => {
+  const strategy = AXIS_CONFIG[position];
+
+  // extent and scale of axis
+  const extent = d3.extent(values) as [number, number];
+  const scale = d3
+    .scaleLinear()
+    .domain([0, extent[1]])
+    .range(strategy.range(width, height)) // Range is now automated
+    .nice();
+  const axis = strategy
+    .factory(scale)
+    .ticks(5)
+    .tickFormat(d3.format(tickFormat) as any);
+
+  // render axis
+  const [tx, ty] = strategy.axisTranslate(width, height);
+  const axisClass = `${className}-${position}-axis`;
+  chart
+    .selectAll<SVGGElement, any>(`.${axisClass}`)
+    .data([null])
+    .join("g")
+    .attr("class", axisClass)
+    .attr("transform", `translate(${tx}, ${ty})`)
+    .call(axis);
+
+  // render axis label
+  const labelClass = `${className}-${position}-label`;
+  chart
+    .selectAll<SVGTextElement, string>(`.${labelClass}`)
+    .data([label])
+    .join("text")
+    .attr("class", labelClass)
+    .attr("text-anchor", "middle")
+    .attr("fill", fill)
+    .style("font-size", "12px")
+    .style("font-weight", "bold")
+    .attr(
+      "transform",
+      `translate(
+        ${strategy.label.x(width, height)},${strategy.label.y(width, height)})
+        rotate(${strategy.label.rotate})
+      `,
+    )
+    .text((d) => d);
+
+  return { scale, extent };
+};
+
 const drawAxis = (
   chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
   axis: d3.Axis<d3.NumberValue>,

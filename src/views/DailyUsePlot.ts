@@ -1,5 +1,4 @@
 import m from "mithril";
-import * as d3 from "d3";
 import AppState, { AggregatedDailyResult } from "../models/AppState";
 import {
   MARGIN,
@@ -7,8 +6,7 @@ import {
   VnodeDOMAttrs,
   selectChart,
   selectTooltip,
-  drawAxis,
-  drawAxisLabel,
+  drawAxisSet,
   drawPoints,
 } from "../utils/draw";
 import { formatDate } from "../utils/date";
@@ -41,64 +39,35 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Degree Day' axis (x)
-  const degreeDayExtent = d3.extent(
-    data.map((d) => d.heatDegDays as number),
-  ) as [number, number];
-  const degreeDayScale = d3
-    .scaleLinear()
-    .domain([0, degreeDayExtent[1]])
-    .range([0, width])
-    .nice();
-  const degreeDayAxis = d3
-    .axisBottom(degreeDayScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
-
-  // 'Consumption' axis (y)
-  const consumptionExtent = d3.extent(data.map((d) => d.consumption)) as [
-    number,
-    number,
-  ];
-  const consumptionScale = d3
-    .scaleLinear()
-    .domain([0, consumptionExtent[1]])
-    .range([height, 0])
-    .nice();
-  const consumptionAxis = d3
-    .axisLeft(consumptionScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
-
-  // Draw heating degree day (x) axis
-  drawAxis(chart, degreeDayAxis, "degree-day", 0, height);
-  drawAxisLabel(
+  const { scale: xScale } = drawAxisSet(
     chart,
-    "degree-day",
+    "bottom",
+    data.map((d) => d.heatDegDays as number),
     "Heating Degree Days",
-    width / 2,
-    height + MARGIN.bottom - 15,
-    0,
+    width,
+    height,
     COLOR.degreeDay,
+    "degree-day-daily",
   );
 
-  // Draw consumption (y) axis
-  drawAxis(chart, consumptionAxis, "consumption-day", 0, 0);
-  drawAxisLabel(
+  // 'Consumption' axis (y)
+  const { scale: yScale } = drawAxisSet(
     chart,
-    "consumption",
+    "left",
+    data.map((d) => d.consumption as number),
     "Consumption (kWh)",
-    -height / 2,
-    -MARGIN.left + 15,
-    -90,
+    width,
+    height,
     COLOR.consumption,
+    "consumption-daily",
   );
 
   drawPoints(
     chart,
     data,
     "heatdegdays-consumption",
-    (d) => degreeDayScale(d.heatDegDays as number),
-    (d) => consumptionScale(d.consumption),
+    (d) => xScale(d.heatDegDays as number),
+    (d) => yScale(d.consumption),
     COLOR.consumption,
     tooltip,
   );

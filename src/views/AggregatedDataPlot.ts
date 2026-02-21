@@ -9,6 +9,7 @@ import {
   selectChart,
   selectTooltip,
   drawAxis,
+  drawAxisSet,
   drawAxisLabel,
   drawBars,
   drawPoints,
@@ -56,46 +57,40 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     .tickFormat(d3.timeFormat("%b %Y") as any);
 
   // 'Degree Day' axis
-  const degreeDayExtent = d3.extent(data.map((d) => d.heatdegdays)) as [
-    number,
-    number,
-  ];
-  const degreeDayScale = d3
-    .scaleLinear()
-    .domain([0, degreeDayExtent[1]])
-    .range([height, 0])
-    .nice();
-  const degreeDayAxis = d3
-    .axisLeft(degreeDayScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
+  const { scale: degreeDayScale } = drawAxisSet(
+    chart,
+    "left",
+    data.map((d) => d.heatdegdays),
+    "Heating Degree Days",
+    width,
+    height,
+    COLOR.degreeDay,
+    "degreeday",
+  );
 
   // 'Consumption' axis
-  const consumptionExtent = d3.extent(data.map((d) => d.consumption)) as [
-    number,
-    number,
-  ];
-  const consumptionScale = d3
-    .scaleLinear()
-    .domain([0, consumptionExtent[1]])
-    .range([height, 0])
-    .nice();
-  const consumptionAxis = d3
-    .axisRight(consumptionScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
+  const { scale: consumptionScale } = drawAxisSet(
+    chart,
+    "right",
+    data.map((d) => d.consumption),
+    "Consumption (kWh)",
+    width,
+    height,
+    COLOR.consumption,
+    "consumption",
+  );
 
   // 'Cost' axis
-  const costExtent = d3.extent(data.map((d) => d.cost)) as [number, number];
-  const costScale = d3
-    .scaleLinear()
-    .domain([0, costExtent[1]])
-    .range([height, 0])
-    .nice();
-  const costAxis = d3
-    .axisRight(costScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
+  const { scale: costScale } = drawAxisSet(
+    chart,
+    "right2",
+    data.map((d) => d.cost),
+    "Cost ($)",
+    width,
+    height,
+    COLOR.cost,
+    "cost",
+  );
 
   // X-axis
   drawAxis(chart, xAxisTicks, "x", 0, height);
@@ -108,42 +103,6 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     height + MARGIN.bottom - 15,
     0,
     COLOR.month,
-  );
-
-  // Heating degree day axis
-  drawAxis(chart, degreeDayAxis, "degree-day", 0, 0);
-  drawAxisLabel(
-    chart,
-    "degree-day",
-    "Heating Degree Days",
-    -height / 2,
-    -MARGIN.left + 15,
-    -90,
-    COLOR.degreeDay,
-  );
-
-  // Consumption axis
-  drawAxis(chart, consumptionAxis, "consumption", width, 0);
-  drawAxisLabel(
-    chart,
-    "consumption",
-    "Consumption (kWh)",
-    -height / 2,
-    width + 40,
-    -90,
-    COLOR.consumption,
-  );
-
-  // Cost axis
-  drawAxis(chart, costAxis, "cost", width + 60, 0);
-  drawAxisLabel(
-    chart,
-    "cost",
-    "Cost ($)",
-    -height / 2,
-    width + 60 + 40,
-    -90,
-    COLOR.cost,
   );
 
   // Degree day bars
@@ -235,65 +194,35 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Degree Day' axis (x)
-  const degreeDayExtent = d3.extent(data.map((d) => d.heatdegdays)) as [
-    number,
-    number,
-  ];
-  const degreeDayScale = d3
-    .scaleLinear()
-    .domain([0, degreeDayExtent[1]])
-    .range([0, width])
-    .nice();
-  const degreeDayAxis = d3
-    .axisBottom(degreeDayScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
-
-  // 'Consumption' axis (y)
-  const consumptionExtent = d3.extent(data.map((d) => d.consumption)) as [
-    number,
-    number,
-  ];
-  const consumptionScale = d3
-    .scaleLinear()
-    .domain([0, consumptionExtent[1]])
-    .range([height, 0])
-    .nice();
-  const consumptionAxis = d3
-    .axisLeft(consumptionScale)
-    .ticks(5)
-    .tickFormat(d3.format(".2s") as any);
-
-  // Draw heating degree day (x) axis
-  drawAxis(chart, degreeDayAxis, "degree-day", 0, height);
-  drawAxisLabel(
+  const { scale: xScale } = drawAxisSet(
     chart,
-    "degree-day",
+    "bottom",
+    data.map((d) => d.heatdegdays as number),
     "Heating Degree Days",
-    width / 2,
-    height + MARGIN.bottom - 15,
-    0,
+    width,
+    height,
     COLOR.degreeDay,
+    "heatdegdays-daily",
   );
 
-  // Draw consumption (y) axis
-  drawAxis(chart, consumptionAxis, "consumption-day", 0, 0);
-  drawAxisLabel(
+  // 'Consumption' axis (y)
+  const { scale: yScale } = drawAxisSet(
     chart,
-    "consumption",
+    "left",
+    data.map((d) => d.consumption as number),
     "Consumption (kWh)",
-    -height / 2,
-    -MARGIN.left + 15,
-    -90,
+    width,
+    height,
     COLOR.consumption,
+    "consumption-daily",
   );
 
   drawScatterplotLine(
     chart,
     data,
     "heatdegdays-consumption",
-    (d) => degreeDayScale(d.heatdegdays),
-    (d) => consumptionScale(d.consumption),
+    (d) => xScale(d.heatdegdays),
+    (d) => yScale(d.consumption),
     COLOR.consumption,
     COLOR.month,
     tooltip,
