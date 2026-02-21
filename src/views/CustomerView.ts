@@ -1,5 +1,5 @@
 import m from "mithril";
-import Customer, { type CustomerRecord } from "../models/Customer";
+import Customer, { CustomerRecord } from "../models/Customer";
 import FileListItem from "./FileListItem";
 
 interface AddressViewAttrs {

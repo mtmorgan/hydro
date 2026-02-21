@@ -1,6 +1,6 @@
-import { type StationRecord } from "../models/Climate";
-import { type EnergyUseRecord } from "../models/EnergyUse";
-import { type AggregatedResult } from "../models/AppState";
+import { StationRecord } from "../models/Climate";
+import { UsageSummaryRecord, IntervalBlockRecord } from "../models/EnergyUse";
+import { AggregatedDailyResult, AggregatedResult } from "../models/AppState";
 import { formatDate } from "../utils/date";
 
 /*

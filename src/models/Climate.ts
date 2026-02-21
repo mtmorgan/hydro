@@ -54,16 +54,18 @@ const requestDailyData = async (climateId: string) => {
       FeatureCollection<null, DailyDataProperties>
     >(url, "dailyData");
 
-    Climate.stationData = data.features.map((day) => {
-      const date = new Date(day.properties.LOCAL_DATE);
-      return {
-        timestamp: date.getTime(),
-        meantemp: day.properties.MEAN_TEMPERATURE,
-        heatDegDays: day.properties.HEATING_DEGREE_DAYS,
-        coolDegDays: day.properties.COOLING_DEGREE_DAYS,
-        totalPrecipitation: day.properties.TOTAL_PRECIPITATION,
-      } as StationRecord;
-    });
+    Climate.stationData = data.features
+      .map((day) => {
+        const date = new Date(day.properties.LOCAL_DATE);
+        return {
+          timestamp: date.getTime(),
+          meantemp: day.properties.MEAN_TEMPERATURE,
+          heatDegDays: day.properties.HEATING_DEGREE_DAYS,
+          coolDegDays: day.properties.COOLING_DEGREE_DAYS,
+          totalPrecipitation: day.properties.TOTAL_PRECIPITATION,
+        } as StationRecord;
+      })
+      .filter((elt) => elt.meantemp !== null);
     Climate.status = Status.READY;
   } catch (err) {
     Climate.error = "Cache / Network Error: " + err;
