@@ -14,7 +14,7 @@ const enum EnergyFileType {
 interface EnergyXMLResult {
   file: File;
   fileType: EnergyFileType;
-  data: EnergyUseRecord[] | CustomerRecord | null;
+  data: EnergyUseRecord | CustomerRecord | null;
 }
 
 const energyXMLFileType = (xmlDoc: Document): EnergyFileType => {
@@ -56,7 +56,7 @@ const Energy = {
 
     const energyUseInput = input.content
       .filter((elt) => elt.fileType === EnergyFileType.ENERGY_USE)
-      .map((elt) => ({ ...elt, data: elt.data as EnergyUseRecord[] }));
+      .map((elt) => ({ ...elt, data: elt.data as EnergyUseRecord }));
     EnergyUse.init(energyUseInput);
 
     const customerInput = input.content

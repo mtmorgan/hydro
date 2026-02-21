@@ -1,6 +1,6 @@
-import { type StationRecord } from "../models/Climate";
-import { type EnergyUseRecord } from "../models/EnergyUse";
-import { type AggregatedResult } from "../models/AppState";
+import { StationRecord } from "../models/Climate";
+import { UsageSummaryRecord, IntervalBlockRecord } from "../models/EnergyUse";
+import { AggregatedDailyResult, AggregatedResult } from "../models/AppState";
 import { formatDate } from "../utils/date";
 
 /*
@@ -9,7 +9,7 @@ import { formatDate } from "../utils/date";
 
 export const aggregateStationRecords = (
   stationRecord: StationRecord[],
-  energyUse: EnergyUseRecord[],
+  energyUse: UsageSummaryRecord[],
 ) => {
   // Each interval is defined by boundaries[i] to boundaries[i+1]
   return energyUse.reduce<{
@@ -56,4 +56,18 @@ export const aggregateStationRecords = (
     },
     { results: [], dataIndex: 0 },
   ).results;
+};
+
+export const aggregateDailyRecords = (
+  station: StationRecord[],
+  intervalBlock: IntervalBlockRecord[],
+): AggregatedDailyResult[] => {
+  const intervalLookup = new Map(
+    intervalBlock.map((elt) => [formatDate(elt.timestamp), elt]),
+  );
+  const result = station.flatMap((stn) => {
+    const interval = intervalLookup.get(formatDate(stn.timestamp));
+    return interval ? [{ ...stn, ...interval }] : [];
+  });
+  return result;
 };

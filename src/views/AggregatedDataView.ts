@@ -1,6 +1,6 @@
 import m from "mithril";
 import { DataTable, DataTableColumn } from "mithril-materialized";
-import AppState, { type AggregatedResult } from "../models/AppState";
+import AppState, { AggregatedResult } from "../models/AppState";
 
 const CLIMATE_TABLE_COLUMNS = [
   {

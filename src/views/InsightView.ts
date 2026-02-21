@@ -1,5 +1,6 @@
 import m from "mithril";
 import AggregatedDataPlot from "./AggregatedDataPlot";
+import DailyUsePlot from "./DailyUsePlot";
 import AggregatedDataTable from "./AggregatedDataView";
 import Climate from "../models/Climate";
 import Customer from "../models/Customer";
@@ -17,7 +18,7 @@ const InsightView: m.Component = {
       EnergyUse.status === Status.READY && [
         m("div", [
           m("strong", "Energy Use: "),
-          `${EnergyUse.energyUse.length} months`,
+          `${EnergyUse.usageSummary.length} months`,
         ]),
         // Indented file names: one per line
         EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
@@ -30,6 +31,7 @@ const InsightView: m.Component = {
     ]),
     m("div.card-panel", m(AggregatedDataTable)),
     m(AggregatedDataPlot),
+    m(DailyUsePlot),
   ],
 };
 
