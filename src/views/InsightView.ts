@@ -1,5 +1,6 @@
 import m from "mithril";
 import AggregatedDataPlot from "./AggregatedDataPlot";
+import DailyUsePlot from "./DailyUsePlot";
 import AggregatedDataTable from "./AggregatedDataView";
 import Climate from "../models/Climate";
 import Customer from "../models/Customer";
@@ -30,6 +31,7 @@ const InsightView: m.Component = {
     ]),
     m("div.card-panel", m(AggregatedDataTable)),
     m(AggregatedDataPlot),
+    m(DailyUsePlot),
   ],
 };
 
