@@ -6,7 +6,7 @@ import {
   VnodeDOMAttrs,
   selectChart,
   selectTooltip,
-  drawAxisSet,
+  drawAxis,
   drawPoints,
 } from "../utils/draw";
 import { formatDate } from "../utils/date";
@@ -39,7 +39,7 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Degree Day' axis (x)
-  const { scale: xScale } = drawAxisSet(
+  const { scale: xScale } = drawAxis(
     chart,
     "bottom",
     data.map((d) => d.heatDegDays as number),
@@ -51,7 +51,7 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Consumption' axis (y)
-  const { scale: yScale } = drawAxisSet(
+  const { scale: yScale } = drawAxis(
     chart,
     "left",
     data.map((d) => d.consumption as number),

@@ -9,8 +9,7 @@ import {
   selectChart,
   selectTooltip,
   drawAxis,
-  drawAxisSet,
-  drawAxisLabel,
+  drawDateAxis,
   drawBars,
   drawPoints,
   drawScatterplotLine,
@@ -38,26 +37,25 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // Date-axis
-  const xExtent = d3.extent(data.map((d) => d.date)) as [Date, Date];
-  xExtent[1] = d3.timeDay.offset(xExtent[1], data[data.length - 1].days); // allow for end of cycle
-  const xScale = d3.scaleTime().domain(xExtent).range([0, width]);
+  const { scale: xScale } = drawDateAxis(
+    chart,
+    "bottom",
+    data.map((d) => d.date),
+    "Month",
+    width,
+    height,
+    COLOR.month,
+    data[data.length - 1].days,
+    "month",
+  );
   const xScaleMidpoint = (d: ChartTrace) => {
     const start = xScale(d.date);
     const end = xScale(d3.timeDay.offset(d.date, d.days));
     return start + (end - start) / 2;
   };
-  const xAxisTicks = d3
-    .axisBottom(xScale)
-    .ticks(d3.timeMonth.every(1))
-    .tickFormat(() => "" as any); // Hide monthly tick labels
-  const xAxisQuarterlyLabels = d3
-    .axisBottom(xScale)
-    .ticks(d3.timeMonth.every(3))
-    .tickSize(9)
-    .tickFormat(d3.timeFormat("%b %Y") as any);
 
   // 'Degree Day' axis
-  const { scale: degreeDayScale } = drawAxisSet(
+  const { scale: degreeDayScale } = drawAxis(
     chart,
     "left",
     data.map((d) => d.heatdegdays),
@@ -69,7 +67,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Consumption' axis
-  const { scale: consumptionScale } = drawAxisSet(
+  const { scale: consumptionScale } = drawAxis(
     chart,
     "right",
     data.map((d) => d.consumption),
@@ -81,7 +79,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Cost' axis
-  const { scale: costScale } = drawAxisSet(
+  const { scale: costScale } = drawAxis(
     chart,
     "right2",
     data.map((d) => d.cost),
@@ -90,19 +88,6 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     height,
     COLOR.cost,
     "cost",
-  );
-
-  // X-axis
-  drawAxis(chart, xAxisTicks, "x", 0, height);
-  drawAxis(chart, xAxisQuarterlyLabels, "x-quarterly", 0, height);
-  drawAxisLabel(
-    chart,
-    "x",
-    "Month",
-    width / 2,
-    height + MARGIN.bottom - 15,
-    0,
-    COLOR.month,
   );
 
   // Degree day bars
@@ -194,7 +179,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Degree Day' axis (x)
-  const { scale: xScale } = drawAxisSet(
+  const { scale: xScale } = drawAxis(
     chart,
     "bottom",
     data.map((d) => d.heatdegdays as number),
@@ -206,7 +191,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Consumption' axis (y)
-  const { scale: yScale } = drawAxisSet(
+  const { scale: yScale } = drawAxis(
     chart,
     "left",
     data.map((d) => d.consumption as number),

@@ -152,7 +152,7 @@ const AXIS_CONFIG: Record<AxisPosition, AxisStrategy> = {
   },
 };
 
-export const drawAxisSet = (
+export const drawAxis = (
   chart: d3.Selection<SVGGElement, any, any, any>,
   position: AxisPosition,
   values: number[],
@@ -211,46 +211,97 @@ export const drawAxisSet = (
   return { scale, extent };
 };
 
-const drawAxis = (
-  chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
-  axis: d3.Axis<d3.NumberValue>,
-  className: string,
-  xTranslate: number,
-  yTranslate: number,
-) => {
-  const classId = `${className}-axis`;
-  chart
-    .selectAll<SVGGElement, null>(`.${classId}`)
-    .data([null])
-    .join("g")
-    .attr("class", classId)
-    .attr("transform", `translate(${xTranslate}, ${yTranslate})`)
-    .call(axis);
+type DateAxisPosition = "bottom";
+
+const DATE_AXIS_CONFIG = {
+  bottom: {
+    axisTranslate: (_w: number, h: number) => [0, h],
+    label: {
+      x: (w: number) => w / 2,
+      y: (_w: number, h: number) => h + MARGIN.bottom - 15,
+      rotate: 0,
+    },
+  },
 };
 
-const drawAxisLabel = (
-  chart: d3.Selection<SVGGElement, null, SVGSVGElement, unknown>,
-  className: string,
+export const drawDateAxis = (
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  position: DateAxisPosition,
+  dates: Date[],
   label: string,
-  x: number,
-  y: number,
-  rotate: number,
+  width: number,
+  height: number,
   fill: string,
+  lastCycleDays: number = 0, // allow for end of cycle
+  className: string = "chart-date",
 ) => {
-  const classId = `${className}-axis-label`;
-  chart
-    .selectAll<SVGGElement, null>(`.${classId}`)
+  const strategy = DATE_AXIS_CONFIG[position];
+
+  // Extent and scale setup
+  const extent = d3.extent(dates) as [Date, Date];
+  if (lastCycleDays > 0) {
+    extent[1] = d3.timeDay.offset(extent[1], lastCycleDays);
+  }
+  const scale = d3.scaleTime().domain(extent).range([0, width]);
+
+  // 2. Render Axis Group
+  const [tx, ty] = strategy.axisTranslate(width, height);
+  const axisClass = `${className}-axis`;
+
+  const axisGroup = chart
+    .selectAll<SVGGElement, any>(`.${axisClass}`)
     .data([null])
+    .join("g")
+    .attr("class", axisClass)
+    .attr("transform", `translate(${tx}, ${ty})`);
+
+  // 3. Layered Tick Rendering
+  // Layer A: Monthly ticks (Ticks only, no labels)
+  axisGroup
+    .selectAll<SVGGElement, null>(".ticks-monthly")
+    .data([null])
+    .join("g")
+    .attr("class", "ticks-monthly")
+    .call(
+      d3
+        .axisBottom(scale)
+        .ticks(d3.timeMonth.every(1))
+        .tickFormat(() => ""),
+    );
+
+  // Layer B: Quarterly Labels (Large ticks + Date format)
+  axisGroup
+    .selectAll<SVGGElement, null>(".labels-quarterly")
+    .data([null])
+    .join("g")
+    .attr("class", "labels-quarterly")
+    .call(
+      d3
+        .axisBottom(scale)
+        .ticks(d3.timeMonth.every(3))
+        .tickSize(9)
+        .tickFormat(d3.timeFormat("%b %Y") as any),
+    );
+
+  // 4. Render Label
+  const labelClass = `${className}-label`;
+  chart
+    .selectAll<SVGTextElement, string>(`.${labelClass}`)
+    .data([label])
     .join("text")
-    .attr("class", classId)
-    .attr("transform", `rotate(${rotate})`) // Rotate for vertical label
-    .attr("x", x)
-    .attr("y", y) // Position to the left of the axis
+    .attr("class", labelClass)
     .attr("text-anchor", "middle")
-    .attr("fill", fill) // Ensure label is visible
+    .attr("fill", fill)
     .style("font-size", "12px")
     .style("font-weight", "bold")
-    .text(label);
+    .attr(
+      "transform",
+      `translate(${strategy.label.x(width)},${strategy.label.y(width, height)})
+       rotate(${strategy.label.rotate})`,
+    )
+    .text((d) => d);
+
+  return { scale, extent };
 };
 
 const drawPoints = <T>(
@@ -369,8 +420,6 @@ export {
   selectChart,
   selectTooltip,
   // draw
-  drawAxis,
-  drawAxisLabel,
   drawPoints,
   drawBars,
   drawLine,
