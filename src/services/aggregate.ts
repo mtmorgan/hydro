@@ -67,7 +67,7 @@ export const aggregateDailyRecords = (
   );
   const result = station.flatMap((stn) => {
     const interval = intervalLookup.get(formatDate(stn.timestamp));
-    return interval ? [{ ...stn, ...interval }] : [];
+    return interval && stn.meantemp !== null ? [{ ...stn, ...interval }] : [];
   });
   return result;
 };
