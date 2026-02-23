@@ -3,9 +3,10 @@ import { DataTable, DataTableColumn } from "mithril-materialized";
 import EnergyUse, {
   UsageSummaryRecord,
   IntervalBlockRecord,
+  IntervalReadingRecord,
 } from "../models/EnergyUse";
 import FileListItem from "./FileListItem";
-import { formatDate } from "../utils/date";
+import { formatDate, formatHour } from "../utils/date";
 
 const UsageSummaryDisplay: m.Component<{
   summaryData: UsageSummaryRecord[];
@@ -83,6 +84,49 @@ const IntervalSummaryDisplay: m.Component<{
   },
 };
 
+const IntervalReadingDisplay: m.Component<{
+  summaryData: IntervalReadingRecord[];
+}> = {
+  view: ({ attrs }) => {
+    const { summaryData } = attrs;
+
+    const columns: DataTableColumn<IntervalReadingRecord>[] = [
+      {
+        key: "start",
+        title: "Date",
+        render: (row) => formatDate(row.timestamp),
+      },
+      {
+        key: "time",
+        title: "Hour",
+        render: (row) => formatHour(row.timestamp),
+      },
+      {
+        key: "consumption",
+        title: "Consumption (kWh)",
+        render: (row) => row.consumption.toPrecision(3),
+      },
+    ];
+
+    return m("div.card-panel", [
+      m("div", [
+        m("strong", "Energy Use: "),
+        `${summaryData.length} hourly intervals; showing  last 100`,
+      ]),
+      // Indented file names: one per line
+      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
+      m("p", "Scroll for more"),
+      m(".table-scroll-container", [
+        m(DataTable<IntervalReadingRecord>, {
+          data: summaryData.slice(-100),
+          columns: columns,
+          striped: false,
+        }),
+      ]),
+    ]);
+  },
+};
+
 const EnergyUseView: m.Component = {
   view: () => [
     EnergyUse.fileName.length > 0
@@ -90,6 +134,9 @@ const EnergyUseView: m.Component = {
           m(UsageSummaryDisplay, { summaryData: EnergyUse.usageSummary }),
           m(IntervalSummaryDisplay, {
             summaryData: EnergyUse.intervalSummary,
+          }),
+          m(IntervalReadingDisplay, {
+            summaryData: EnergyUse.intervalReading,
           }),
         ]
       : m(

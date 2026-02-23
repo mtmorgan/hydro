@@ -1,6 +1,13 @@
 import { xpathNumber, xpathString } from "../services/xmlInput";
 import { Status } from "./types";
 
+export interface IntervalReadingRecord {
+  timestamp: number;
+  duration: number;
+  consumption: number;
+  quality: number;
+}
+
 export interface IntervalBlockRecord {
   timestamp: number;
   duration: number;
@@ -19,6 +26,7 @@ export interface UsageSummaryRecord {
 }
 
 export interface EnergyUseRecord {
+  intervalReading: IntervalReadingRecord[];
   intervalBlock: IntervalBlockRecord[];
   usageSummary: UsageSummaryRecord[];
 }
@@ -118,6 +126,7 @@ const EnergyUse = {
   fileName: [] as string[],
   usageSummary: [] as UsageSummaryRecord[], // billing period
   intervalSummary: [] as IntervalBlockRecord[], // daily
+  intervalReading: [] as IntervalReadingRecord[], // hourly
 
   init: (energyUseInput: EnergyUseInput[]) => {
     EnergyUse.status = Status.LOADING;
@@ -131,6 +140,8 @@ const EnergyUse = {
     EnergyUse.intervalSummary = deduplicateSummary(
       data.flatMap((elt) => elt.intervalBlock),
     );
+    EnergyUse.intervalReading = deduplicateSummary(
+      data.flatMap((elt) => elt.intervalReading),
     );
 
     EnergyUse.status = Status.READY;
