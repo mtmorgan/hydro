@@ -19,12 +19,12 @@ export interface UsageSummaryRecord {
 }
 
 export interface EnergyUseRecord {
-  intervalSummary: IntervalBlockRecord[];
-  useSummary: UsageSummaryRecord[];
+  intervalBlock: IntervalBlockRecord[];
+  usageSummary: UsageSummaryRecord[];
 }
 
 const usageSummaryRecord = (usage: Element): UsageSummaryRecord => {
-  const start = xpathNumber(usage, "./espi:billingPeriod/espi:start");
+  const timestamp = xpathNumber(usage, "./espi:billingPeriod/espi:start");
   const duration = xpathNumber(usage, "./espi:billingPeriod/espi:duration");
   const cost = xpathNumber(usage, "./espi:costAdditionalLastPeriod");
   const consumption = xpathNumber(
@@ -37,9 +37,9 @@ const usageSummaryRecord = (usage: Element): UsageSummaryRecord => {
   ).replace(/.*- /, "");
 
   return {
-    timestamp: start * 1000, // milliseconds
+    timestamp: timestamp * 1000, // milliseconds
     duration: duration * 1000, // milliseconds
-    start: new Date(start * 1000),
+    start: new Date(timestamp * 1000),
     days: duration / (60 * 60 * 24),
     cost: cost / 100000,
     consumption: consumption / 1000000,
@@ -48,31 +48,44 @@ const usageSummaryRecord = (usage: Element): UsageSummaryRecord => {
 };
 
 const intervalBlockRecord = (interval: Element): IntervalBlockRecord => {
-  const timestamp = xpathNumber(interval, "./espi:interval/espi:start");
-  const duration = xpathNumber(interval, "./espi:interval/espi:duration");
   const intervalReading = interval.getElementsByTagName("IntervalReading");
   const consumption = Array.from(intervalReading).reduce(
     (acc, elt) => acc + xpathNumber(elt, "./espi:value"),
     0,
   );
   return {
-    timestamp: timestamp * 1000,
-    duration: duration * 1000,
+    timestamp: xpathNumber(interval, "./espi:interval/espi:start") * 1000,
+    duration: xpathNumber(interval, "./espi:interval/espi:duration") * 1000,
     intervalCount: intervalReading.length,
     consumption: consumption / 1000000,
   };
 };
 
+const intervalReadingRecord = (reading: Element): IntervalReadingRecord => {
+  return {
+    timestamp: xpathNumber(reading, "./espi:timePeriod/espi:start") * 1000,
+    duration: xpathNumber(reading, "./espi:timePeriod/espi:duration") * 1000,
+    consumption: xpathNumber(reading, "./espi:value") / 1000000,
+    quality: xpathNumber(reading, "./espi:ReadingQuality/espi:quality"),
+  };
+};
+
 export const parseEnergyUseXML = (xmlDoc: Document): EnergyUseRecord => {
   const intervalBlock = xmlDoc.getElementsByTagName("IntervalBlock");
-  const intervalSummary = Array.from(intervalBlock).map(intervalBlockRecord);
+  const intervalBlocks = Array.from(intervalBlock).map(intervalBlockRecord);
 
   const usageSummary = xmlDoc.getElementsByTagName("UsageSummary");
-  const useSummary = Array.from(usageSummary).map(usageSummaryRecord);
+  const usageSummaries = Array.from(usageSummary).map(usageSummaryRecord);
+
+  const intervalReading = xmlDoc.getElementsByTagName("IntervalReading");
+  const intervalReadings = Array.from(intervalReading).map(
+    intervalReadingRecord,
+  );
 
   return {
-    intervalSummary: intervalSummary,
-    useSummary: useSummary,
+    intervalReading: intervalReadings,
+    intervalBlock: intervalBlocks,
+    usageSummary: usageSummaries,
   };
 };
 
@@ -103,8 +116,8 @@ const deduplicateSummary = <T extends RecordBase>(records: T[]): T[] => {
 const EnergyUse = {
   status: Status.IDLE,
   fileName: [] as string[],
-  usageSummary: [] as UsageSummaryRecord[],
-  intervalSummary: [] as IntervalBlockRecord[],
+  usageSummary: [] as UsageSummaryRecord[], // billing period
+  intervalSummary: [] as IntervalBlockRecord[], // daily
 
   init: (energyUseInput: EnergyUseInput[]) => {
     EnergyUse.status = Status.LOADING;
@@ -113,10 +126,11 @@ const EnergyUse = {
     // De-duplicate keeping timestamp & longest duration
     const data = energyUseInput.map((elt) => elt.data);
     EnergyUse.usageSummary = deduplicateSummary(
-      data.flatMap((elt) => elt.useSummary),
+      data.flatMap((elt) => elt.usageSummary),
     );
     EnergyUse.intervalSummary = deduplicateSummary(
-      data.flatMap((elt) => elt.intervalSummary),
+      data.flatMap((elt) => elt.intervalBlock),
+    );
     );
 
     EnergyUse.status = Status.READY;

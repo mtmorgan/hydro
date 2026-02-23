@@ -1,38 +1,35 @@
 import Climate, { StationRecord } from "./Climate";
-import EnergyUse, { IntervalBlockRecord } from "./EnergyUse";
+import EnergyUse, {
+  IntervalBlockRecord,
+  UsageSummaryRecord,
+} from "./EnergyUse";
 import {
-  aggregateDailyRecords,
-  aggregateStationRecords,
+  StationZipRecord,
+  zipRecords,
+  aggregateRecords,
 } from "../services/aggregate";
 
-export interface AggregatedResult {
-  timestamp: number;
-  start: string;
-  days: number;
-  consumption: number;
-  cost: number;
+export interface UsageSummaryResult extends StationRecord, UsageSummaryRecord {
+  // null values have been removed
+  heatDegDays: number;
   meantemp: number;
-  heatdegdays: number;
 }
 
-export interface AggregatedDailyResult
-  extends StationRecord, IntervalBlockRecord {}
+export interface DailyResult extends StationZipRecord<IntervalBlockRecord> {}
 
 const AppState = {
-  aggregatedStationData: [] as AggregatedResult[],
-  aggregatedDailyData: [] as AggregatedDailyResult[],
+  stationData: [] as UsageSummaryResult[],
+  dailyData: [] as DailyResult[],
   recompute: () => {
-    if (Climate.stationData.length > 0 && EnergyUse.usageSummary.length > 0) {
-      AppState.aggregatedStationData = aggregateStationRecords(
+    if (Climate.stationData.length === 0) return;
+    if (EnergyUse.usageSummary.length > 0) {
+      AppState.stationData = aggregateRecords(
         Climate.stationData,
         EnergyUse.usageSummary,
       );
     }
-    if (
-      Climate.stationData.length > 0 &&
-      EnergyUse.intervalSummary.length > 0
-    ) {
-      AppState.aggregatedDailyData = aggregateDailyRecords(
+    if (EnergyUse.intervalSummary.length > 0) {
+      AppState.dailyData = zipRecords(
         Climate.stationData,
         EnergyUse.intervalSummary,
       );

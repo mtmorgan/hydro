@@ -1,19 +1,19 @@
 import { StationRecord } from "../models/Climate";
-import { UsageSummaryRecord, IntervalBlockRecord } from "../models/EnergyUse";
-import { AggregatedDailyResult, AggregatedResult } from "../models/AppState";
+import { UsageSummaryRecord } from "../models/EnergyUse";
+import { UsageSummaryResult } from "../models/AppState";
 import { formatDate } from "../utils/date";
 
 /*
  * Aggregate climate data to date intervals from hydro
  */
 
-export const aggregateStationRecords = (
+export const aggregateRecords = (
   stationRecord: StationRecord[],
   energyUse: UsageSummaryRecord[],
 ) => {
   // Each interval is defined by boundaries[i] to boundaries[i+1]
   return energyUse.reduce<{
-    results: AggregatedResult[];
+    results: UsageSummaryResult[];
     dataIndex: number; // Single-pass pointer
   }>(
     (acc, energyRecord) => {
@@ -39,16 +39,13 @@ export const aggregateStationRecords = (
       }
 
       acc.results.push({
-        timestamp: energyRecord.timestamp,
-        start: formatDate(energyRecord.timestamp),
-        days: energyRecord.days,
-        consumption: energyRecord.consumption,
-        cost: energyRecord.cost,
+        ...stationRecord[nextIdx],
+        ...energyRecord,
         meantemp: averageTemperature.length
           ? averageTemperature.reduce((a, b) => a + b, 0) /
             averageTemperature.length
           : 0,
-        heatdegdays: heatDegDays,
+        heatDegDays: heatDegDays,
       });
 
       acc.dataIndex = nextIdx; // Update state for the next interval
@@ -58,16 +55,38 @@ export const aggregateStationRecords = (
   ).results;
 };
 
-export const aggregateDailyRecords = (
+// zipRecords() removes heatDegDays and meantemp with null values; strengthen
+// the type definition
+type StrictStationFields = {
+  heatDegDays: number;
+  meantemp: number;
+};
+
+export type StationZipRecord<T> = Omit<
+  StationRecord,
+  keyof StrictStationFields
+> &
+  T &
+  StrictStationFields;
+
+export const zipRecords = <T extends { timestamp: number }>(
   station: StationRecord[],
-  intervalBlock: IntervalBlockRecord[],
-): AggregatedDailyResult[] => {
-  const intervalLookup = new Map(
-    intervalBlock.map((elt) => [formatDate(elt.timestamp), elt]),
+  interval: T[],
+): StationZipRecord<T>[] => {
+  // station dates are unique, whereas interval dates may not be, e.g., hourly
+  const stationLookup = new Map(
+    station.map((elt) => [formatDate(elt.timestamp), elt]),
   );
-  const result = station.flatMap((stn) => {
-    const interval = intervalLookup.get(formatDate(stn.timestamp));
-    return interval && stn.meantemp !== null ? [{ ...stn, ...interval }] : [];
+  const result = interval.flatMap((interval) => {
+    const station = stationLookup.get(formatDate(interval.timestamp));
+    return station && station.meantemp && station.heatDegDays
+      ? [
+          {
+            ...station,
+            ...interval,
+          } as StationZipRecord<T>,
+        ]
+      : [];
   });
   return result;
 };

@@ -1,6 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
-import AppState, { AggregatedResult } from "../models/AppState";
+import AppState, { UsageSummaryResult } from "../models/AppState";
 import {
   MARGIN,
   COLOR,
@@ -16,7 +16,7 @@ import {
 } from "../utils/draw";
 
 // Define the attributes the component expects
-interface Attrs extends VnodeDOMAttrs<AggregatedResult> {}
+interface Attrs extends VnodeDOMAttrs<UsageSummaryResult> {}
 
 const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData, clientHeight: clientHeight } = vnode.attrs;
@@ -44,7 +44,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     "Month",
     width,
     height,
-    COLOR.month,
+    COLOR.time,
     data[data.length - 1].days,
     "month",
   );
@@ -58,7 +58,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { scale: degreeDayScale } = drawAxis(
     chart,
     "left",
-    data.map((d) => d.heatdegdays),
+    data.map((d) => d.heatDegDays),
     "Heating Degree Days",
     width,
     height,
@@ -97,7 +97,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
     "heatdegdays",
     (d) => xScale(d.date),
     (d) => xScale(d3.timeDay.offset(d.date, d.days)),
-    (d) => degreeDayScale(d.heatdegdays),
+    (d) => degreeDayScale(d.heatDegDays),
     height,
     COLOR.degreeDay,
   );
@@ -182,7 +182,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { scale: xScale } = drawAxis(
     chart,
     "bottom",
-    data.map((d) => d.heatdegdays as number),
+    data.map((d) => d.heatDegDays),
     "Heating Degree Days",
     width,
     height,
@@ -194,7 +194,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { scale: yScale } = drawAxis(
     chart,
     "left",
-    data.map((d) => d.consumption as number),
+    data.map((d) => d.consumption),
     "Consumption (kWh)",
     width,
     height,
@@ -206,10 +206,10 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
     chart,
     data,
     "heatdegdays-consumption",
-    (d) => xScale(d.heatdegdays),
+    (d) => xScale(d.heatDegDays),
     (d) => yScale(d.consumption),
     COLOR.consumption,
-    COLOR.month,
+    COLOR.time,
     tooltip,
   );
 };
@@ -247,20 +247,20 @@ const AggregatedDataPlot = {
         "p",
         m("strong", "Heating degree days, consumption, and cost over time"),
       ),
-      AppState.aggregatedStationData.length === 0
+      AppState.stationData.length === 0
         ? m("div.d3-empty-chart", "Select hydro and climate data.")
         : m(HeatingConsumptionCost, {
-            aggregatedData: AppState.aggregatedStationData,
+            aggregatedData: AppState.stationData,
             clientHeight: 400,
           }),
     ),
     m(
       "div.card-panel",
       m("p", m("strong", "Heating degree days and consumption")),
-      AppState.aggregatedStationData.length === 0
+      AppState.stationData.length === 0
         ? m("div.d3-empty-chart", "Select hydro and climate data.")
         : m(HeatingConsumption, {
-            aggregatedData: AppState.aggregatedStationData,
+            aggregatedData: AppState.stationData,
             clientHeight: 0,
           }),
     ),

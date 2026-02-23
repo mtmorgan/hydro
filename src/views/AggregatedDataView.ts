@@ -1,6 +1,6 @@
 import m from "mithril";
 import { DataTable, DataTableColumn } from "mithril-materialized";
-import AppState, { AggregatedResult } from "../models/AppState";
+import AppState, { UsageSummaryResult } from "../models/AppState";
 
 const CLIMATE_TABLE_COLUMNS = [
   {
@@ -13,12 +13,12 @@ const CLIMATE_TABLE_COLUMNS = [
   {
     key: "meantemp",
     title: "Mean Temp (°C)",
-    render: (row: AggregatedResult) => row.meantemp.toFixed(1),
+    render: (row: UsageSummaryResult) => row.meantemp.toFixed(1),
   },
   {
     key: "heatdegdays",
     title: "Heating Degree Days (HDD)",
-    render: (row: AggregatedResult) => row.heatdegdays.toFixed(0),
+    render: (row: UsageSummaryResult) => row.heatDegDays.toFixed(0),
   },
   {
     key: "consumption",
@@ -28,24 +28,25 @@ const CLIMATE_TABLE_COLUMNS = [
   {
     key: "cost",
     title: "Cost ($)",
-    render: (row: AggregatedResult) => row.cost.toFixed(2),
+    render: (row: UsageSummaryResult) => row.cost.toFixed(2),
   },
   {
     key: "consumptionPerHDD",
     title: "kWh / HDD",
-    render: (row: AggregatedResult) =>
-      (row.consumption / row.heatdegdays).toFixed(2),
+    render: (row: UsageSummaryResult) =>
+      (row.consumption / row.heatDegDays).toFixed(2),
   },
   {
     key: "costPerHDD",
     title: "$ / HDD",
-    render: (row: AggregatedResult) => (row.cost / row.heatdegdays).toFixed(2),
+    render: (row: UsageSummaryResult) =>
+      (row.cost / row.heatDegDays).toFixed(2),
   },
 ].map((col) => ({
   // default alignment
   align: "right",
   ...col,
-})) as DataTableColumn<AggregatedResult>[];
+})) as DataTableColumn<UsageSummaryResult>[];
 
 const AggregatedDataTable = {
   view: () => [
@@ -53,15 +54,15 @@ const AggregatedDataTable = {
       "p",
       m("strong", [
         "Climate and energy use",
-        AppState.aggregatedStationData.length > 0 &&
-          ` for ${AppState.aggregatedStationData.length} months (scroll for more)`,
+        AppState.stationData.length > 0 &&
+          ` for ${AppState.stationData.length} months (scroll for more)`,
       ]),
     ),
     m(".table-scroll-container", [
-      m(DataTable<AggregatedResult>, {
+      m(DataTable<UsageSummaryResult>, {
         className: "highlight",
         columns: CLIMATE_TABLE_COLUMNS,
-        data: AppState.aggregatedStationData,
+        data: AppState.stationData,
         sortBy: "startFormatted",
         i18n: { noDataAvailable: "Select hydro and climate data." },
       }),

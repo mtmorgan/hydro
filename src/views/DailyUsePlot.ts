@@ -1,5 +1,5 @@
 import m from "mithril";
-import AppState, { AggregatedDailyResult } from "../models/AppState";
+import AppState, { DailyResult } from "../models/AppState";
 import {
   MARGIN,
   COLOR,
@@ -11,7 +11,7 @@ import {
 } from "../utils/draw";
 import { formatDate } from "../utils/date";
 
-interface Attrs extends VnodeDOMAttrs<AggregatedDailyResult> {}
+interface Attrs extends VnodeDOMAttrs<DailyResult> {}
 
 const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData } = vnode.attrs;
@@ -42,7 +42,7 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { scale: xScale } = drawAxis(
     chart,
     "bottom",
-    data.map((d) => d.heatDegDays as number),
+    data.map((d) => d.heatDegDays),
     "Heating Degree Days",
     width,
     height,
@@ -54,7 +54,7 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { scale: yScale } = drawAxis(
     chart,
     "left",
-    data.map((d) => d.consumption as number),
+    data.map((d) => d.consumption),
     "Consumption (kWh)",
     width,
     height,
@@ -66,7 +66,7 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
     chart,
     data,
     "heatdegdays-consumption",
-    (d) => xScale(d.heatDegDays as number),
+    (d) => xScale(d.heatDegDays),
     (d) => yScale(d.consumption),
     COLOR.consumption,
     tooltip,
@@ -103,9 +103,9 @@ const DailyUsePlot: m.Component = {
     m(
       "div.card-panel",
       m("p", m("stong", "Daily heating degree days and consumption")),
-      AppState.aggregatedDailyData.length > 0 &&
+      AppState.dailyData.length > 0 &&
         m(DailyHeatingConsumption, {
-          aggregatedData: AppState.aggregatedDailyData,
+          aggregatedData: AppState.dailyData,
           clientHeight: 0,
         }),
     ),
