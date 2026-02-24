@@ -311,7 +311,7 @@ const drawPoints = <T>(
   x: (d: T) => number,
   y: (d: T) => number,
   fill: string,
-  tooltip: Tooltip<T> | null,
+  tooltip?: Tooltip<T> | null,
 ) => {
   const classId = `${className}-point`;
   chart
@@ -323,8 +323,6 @@ const drawPoints = <T>(
     .attr("cy", (d) => y(d))
     .attr("r", 4)
     .attr("fill", fill)
-    .attr("stroke", "white")
-    .attr("stroke-width", 1)
     .on("mouseover", (_, d) => {
       tooltip &&
         tooltip.selection
@@ -404,7 +402,7 @@ const drawScatterplotLine = <T>(
   y: (d: T) => number,
   fill: string,
   stroke: string,
-  tooltip: Tooltip<T> | null,
+  tooltip?: Tooltip<T> | null,
 ) => {
   drawLine(chart, data, className, x, y, stroke);
   drawPoints(chart, data, className, x, y, fill, tooltip);

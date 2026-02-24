@@ -1,4 +1,5 @@
 import m from "mithril";
+import * as d3 from "d3";
 import AppState, { HourlyResult } from "../models/AppState";
 import IntervalDatePickerView from "./IntervalDatePickerView";
 import {
@@ -9,6 +10,7 @@ import {
   selectTooltip,
   drawAxis,
   drawPoints,
+  drawScatterplotLine,
 } from "../utils/draw";
 import { formatDate } from "../utils/date";
 
@@ -68,8 +70,31 @@ const drawHourlyConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
     "hourly-consumption",
     (d) => xScale(d.date.getHours()),
     (d) => yScale(d.consumption),
-    COLOR.consumption,
+    COLOR.consumption + "3D", // 30% opacity
     tooltip,
+  );
+
+  const rolled = d3.rollup(
+    data,
+    (v) => d3.mean(v, (d) => d.consumption),
+    (d) => d.date.getHours(),
+  );
+  const hourlyConsumptionAverage = Array.from(
+    rolled,
+    ([hour, consumption]) => ({
+      hour: hour,
+      consumption: consumption || 0,
+    }),
+  ).sort((a, b) => a.hour - b.hour);
+
+  drawScatterplotLine(
+    chart,
+    hourlyConsumptionAverage,
+    "hourly-consumption-average",
+    (d) => xScale(d.hour),
+    (d) => yScale(d.consumption),
+    COLOR.time,
+    COLOR.consumption,
   );
 };
 
@@ -89,9 +114,9 @@ const HourlyConsumption: m.ClosureComponent<Attrs> = () => {
         "div.chart-container",
         m(
           "p",
-          "Each point represents the hourly energy consumption on a single ",
-          "day. Points summarize the 30 days preceeding the last observation. ",
-          "Mouse over individual points for the corresponding date.",
+          "Each blue point represents the hourly energy consumption on a ",
+          "single day. Black points are the hourly average over all days. ",
+          "Mouse over blue points for the corresponding date.",
         ),
         m(IntervalDatePickerView),
       );
