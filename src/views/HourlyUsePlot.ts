@@ -1,5 +1,6 @@
 import m from "mithril";
 import AppState, { HourlyResult } from "../models/AppState";
+import IntervalDatePickerView from "./IntervalDatePickerView";
 import {
   MARGIN,
   COLOR,
@@ -16,15 +17,10 @@ interface Attrs extends VnodeDOMAttrs<HourlyResult> {}
 const drawHourlyConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   const { aggregatedData, clientHeight } = vnode.attrs;
   const clientWidth = Math.min(Math.max(400, vnode.dom.clientWidth), 800);
-  const yearAgo =
-    aggregatedData[aggregatedData.length - 1].timestamp -
-    1000 * 60 * 60 * 24 * 30;
-  const data = aggregatedData
-    .filter((d) => d.timestamp > yearAgo)
-    .map((d) => ({
-      ...d,
-      date: new Date(d.timestamp),
-    }));
+  const data = aggregatedData.map((d) => ({
+    ...d,
+    date: new Date(d.timestamp),
+  }));
 
   const width = clientWidth - MARGIN.right - MARGIN.left;
   const height = clientHeight - MARGIN.top - MARGIN.bottom;
@@ -97,6 +93,7 @@ const HourlyConsumption: m.ClosureComponent<Attrs> = () => {
           "day. Points summarize the 30 days preceeding the last observation. ",
           "Mouse over individual points for the corresponding date.",
         ),
+        m(IntervalDatePickerView),
       );
     },
   };

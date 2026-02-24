@@ -9,6 +9,7 @@ import {
   zipRecords,
   aggregateRecords,
 } from "../services/aggregate";
+import IntervalDatePicker from "./IntervalDatePicker";
 
 export interface UsageSummaryResult extends StationRecord, UsageSummaryRecord {
   // null values have been removed
@@ -23,9 +24,16 @@ export interface HourlyResult extends StationZipRecord<IntervalReadingRecord> {}
 const AppState = {
   stationData: [] as UsageSummaryResult[],
   dailyData: [] as DailyResult[],
-  hourlyData: [] as HourlyResult[],
+  hourlyDataRecords: [] as HourlyResult[],
+  get hourlyData() {
+    return IntervalDatePicker.filter(AppState.hourlyDataRecords);
+  },
   recompute: () => {
+    if (EnergyUse.intervalReadingRecords.length > 0) {
+      IntervalDatePicker.init(EnergyUse.intervalReadingRecords);
+    }
     if (Climate.stationData.length === 0) return;
+
     if (EnergyUse.usageSummary.length > 0) {
       AppState.stationData = aggregateRecords(
         Climate.stationData,
@@ -38,10 +46,10 @@ const AppState = {
         EnergyUse.intervalSummary,
       );
     }
-    if (EnergyUse.intervalReading.length > 0) {
-      AppState.hourlyData = zipRecords(
+    if (EnergyUse.intervalReadingRecords.length > 0) {
+      AppState.hourlyDataRecords = zipRecords(
         Climate.stationData,
-        EnergyUse.intervalReading,
+        EnergyUse.intervalReadingRecords,
       );
     }
   },

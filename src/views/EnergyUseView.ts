@@ -5,6 +5,7 @@ import EnergyUse, {
   IntervalBlockRecord,
   IntervalReadingRecord,
 } from "../models/EnergyUse";
+import IntervalDatePickerView from "./IntervalDatePickerView";
 import FileListItem from "./FileListItem";
 import { formatDate, formatHour } from "../utils/date";
 
@@ -85,10 +86,13 @@ const IntervalSummaryDisplay: m.Component<{
 };
 
 const IntervalReadingDisplay: m.Component<{
-  summaryData: IntervalReadingRecord[];
+  intervals: IntervalReadingRecord[];
 }> = {
   view: ({ attrs }) => {
-    const { summaryData } = attrs;
+    const { intervals } = attrs;
+
+    if (EnergyUse.intervalReadingRecords.length === 0)
+      return m("p.grey-text", "No hourly intervals available");
 
     const columns: DataTableColumn<IntervalReadingRecord>[] = [
       {
@@ -111,14 +115,14 @@ const IntervalReadingDisplay: m.Component<{
     return m("div.card-panel", [
       m("div", [
         m("strong", "Energy Use: "),
-        `${summaryData.length} hourly intervals; showing  last 100`,
+        `${EnergyUse.intervalReadingRecords.length} hourly intervals;`,
       ]),
       // Indented file names: one per line
       EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
-      m("p", "Scroll for more"),
+      m(IntervalDatePickerView),
       m(".table-scroll-container", [
         m(DataTable<IntervalReadingRecord>, {
-          data: summaryData.slice(-100),
+          data: intervals,
           columns: columns,
           striped: false,
         }),
@@ -136,7 +140,7 @@ const EnergyUseView: m.Component = {
             summaryData: EnergyUse.intervalSummary,
           }),
           m(IntervalReadingDisplay, {
-            summaryData: EnergyUse.intervalReading,
+            intervals: EnergyUse.intervalReading,
           }),
         ]
       : m(
