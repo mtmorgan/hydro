@@ -3,9 +3,21 @@ import { DataTable, DataTableColumn } from "mithril-materialized";
 import EnergyUse, {
   UsageSummaryRecord,
   IntervalBlockRecord,
+  IntervalReadingRecord,
 } from "../models/EnergyUse";
+import IntervalDatePickerView from "./IntervalDatePickerView";
 import FileListItem from "./FileListItem";
-import { formatDate } from "../utils/date";
+import { formatDate, formatHour } from "../utils/date";
+import PowerOutage from "./PowerOutage";
+
+const EnergyUseFiles: m.Component = {
+  view: () => {
+    return m("div.card-panel", [
+      m("div", m("strong", "Energy Use")),
+      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
+    ]);
+  },
+};
 
 const UsageSummaryDisplay: m.Component<{
   summaryData: UsageSummaryRecord[];
@@ -27,11 +39,9 @@ const UsageSummaryDisplay: m.Component<{
 
     return m("div.card-panel", [
       m("div", [
-        m("strong", "Energy Use: "),
+        m("strong", "Monthly: "),
         `${EnergyUse.usageSummary.length} months`,
       ]),
-      // Indented file names: one per line
-      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       m("p", "Scroll for more"),
       m(".table-scroll-container", [
         m(DataTable<UsageSummaryRecord>, {
@@ -56,7 +66,7 @@ const IntervalSummaryDisplay: m.Component<{
         title: "Start Date",
         render: (row) => formatDate(row.timestamp),
       },
-      { key: "days", title: "Days", field: "intervalCount" },
+      { key: "hours", title: "Hours", field: "intervalCount" },
       {
         key: "consumption",
         title: "Consumption (kWh)",
@@ -66,11 +76,9 @@ const IntervalSummaryDisplay: m.Component<{
 
     return m("div.card-panel", [
       m("div", [
-        m("strong", "Energy Use: "),
+        m("strong", "Daily: "),
         `${EnergyUse.intervalSummary.length} days`,
       ]),
-      // Indented file names: one per line
-      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       m("p", "Scroll for more"),
       m(".table-scroll-container", [
         m(DataTable<IntervalBlockRecord>, {
@@ -83,14 +91,67 @@ const IntervalSummaryDisplay: m.Component<{
   },
 };
 
+const IntervalReadingDisplay: m.Component<{
+  intervals: IntervalReadingRecord[];
+}> = {
+  view: ({ attrs }) => {
+    const { intervals } = attrs;
+
+    if (EnergyUse.intervalReadingRecords.length === 0) return;
+
+    const columns: DataTableColumn<IntervalReadingRecord>[] = [
+      {
+        key: "start",
+        title: "Date",
+        render: (row) => formatDate(row.timestamp),
+      },
+      {
+        key: "time",
+        title: "Hour",
+        render: (row) => formatHour(row.timestamp),
+      },
+      {
+        key: "consumption",
+        title: "Consumption (kWh)",
+        render: (row) => row.consumption.toPrecision(3),
+      },
+    ];
+
+    return m("div.card-panel", [
+      m("div", [
+        m("strong", "Hourly: "),
+        `${EnergyUse.intervalReadingRecords.length} intervals`,
+      ]),
+      m(IntervalDatePickerView),
+      m(".table-scroll-container", [
+        m(DataTable<IntervalReadingRecord>, {
+          data: intervals,
+          columns: columns,
+          striped: false,
+        }),
+      ]),
+    ]);
+  },
+};
+
 const EnergyUseView: m.Component = {
   view: () => [
     EnergyUse.fileName.length > 0
       ? [
+          // Indented file names: one per line
+          m(EnergyUseFiles),
           m(UsageSummaryDisplay, { summaryData: EnergyUse.usageSummary }),
           m(IntervalSummaryDisplay, {
             summaryData: EnergyUse.intervalSummary,
           }),
+          EnergyUse.intervalReadingRecords.length === 0 &&
+            m("p.grey-text", "No hourly intervals available"),
+
+          m(IntervalReadingDisplay, {
+            intervals: EnergyUse.intervalReading,
+          }),
+
+          m("div.card-panel", m(PowerOutage)),
         ]
       : m(
           "p.grey-text",

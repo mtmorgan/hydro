@@ -155,29 +155,15 @@ const AXIS_CONFIG: Record<AxisPosition, AxisStrategy> = {
 export const drawAxis = (
   chart: d3.Selection<SVGGElement, any, any, any>,
   position: AxisPosition,
-  values: number[],
+  axis: d3.Axis<d3.NumberValue> | d3.Axis<number>,
   label: string,
   width: number,
   height: number,
   fill: string,
-  className: string = "chart",
-  tickFormat: string = ".2s",
+  className: string,
 ) => {
   const strategy = AXIS_CONFIG[position];
 
-  // extent and scale of axis
-  const extent = d3.extent(values) as [number, number];
-  const scale = d3
-    .scaleLinear()
-    .domain([0, extent[1]])
-    .range(strategy.range(width, height)) // Range is now automated
-    .nice();
-  const axis = strategy
-    .factory(scale)
-    .ticks(5)
-    .tickFormat(d3.format(tickFormat) as any);
-
-  // render axis
   const [tx, ty] = strategy.axisTranslate(width, height);
   const axisClass = `${className}-${position}-axis`;
   chart
@@ -203,10 +189,37 @@ export const drawAxis = (
       "transform",
       `translate(
         ${strategy.label.x(width, height)},${strategy.label.y(width, height)})
-        rotate(${strategy.label.rotate})
-      `,
+        rotate(${strategy.label.rotate})`,
     )
     .text((d) => d);
+};
+
+export const drawAxisFromValues = (
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  position: AxisPosition,
+  values: number[],
+  label: string,
+  width: number,
+  height: number,
+  fill: string,
+  className: string = "chart",
+  tickFormat: string = ".2s",
+) => {
+  const strategy = AXIS_CONFIG[position];
+
+  // extent and scale of axis
+  const extent = d3.extent(values) as [number, number];
+  const scale = d3
+    .scaleLinear()
+    .domain(extent)
+    .range(strategy.range(width, height)); // Range is now automated
+  const axis = strategy
+    .factory(scale)
+    .ticks(5)
+    .tickFormat(d3.format(tickFormat) as any);
+
+  // render axis
+  drawAxis(chart, position, axis, label, width, height, fill, className);
 
   return { scale, extent };
 };
@@ -311,7 +324,7 @@ const drawPoints = <T>(
   x: (d: T) => number,
   y: (d: T) => number,
   fill: string,
-  tooltip: Tooltip<T> | null,
+  tooltip?: Tooltip<T> | null,
 ) => {
   const classId = `${className}-point`;
   chart
@@ -323,8 +336,6 @@ const drawPoints = <T>(
     .attr("cy", (d) => y(d))
     .attr("r", 4)
     .attr("fill", fill)
-    .attr("stroke", "white")
-    .attr("stroke-width", 1)
     .on("mouseover", (_, d) => {
       tooltip &&
         tooltip.selection
@@ -404,10 +415,61 @@ const drawScatterplotLine = <T>(
   y: (d: T) => number,
   fill: string,
   stroke: string,
-  tooltip: Tooltip<T> | null,
+  tooltip?: Tooltip<T> | null,
 ) => {
   drawLine(chart, data, className, x, y, stroke);
   drawPoints(chart, data, className, x, y, fill, tooltip);
+};
+
+const drawStackedBarcode = <T extends { date: Date; duration: number }>(
+  chart: d3.Selection<SVGGElement, any, any, any>,
+  runs: T[],
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScalePoint<number>,
+  tooltip: Tooltip<T> | null,
+  laneHeight: number = 48,
+) => {
+  const getDayOfYear = (date: Date) => {
+    return parseInt(d3.timeFormat("%j")(date));
+  };
+
+  chart
+    .selectAll(".outage-bar")
+    .data(runs)
+    .join("rect")
+    .attr("class", "outage-bar")
+    // 1. Position X by Day of Year to align Feb 25 2024 with Feb 25 2025
+    .attr("x", (d) => xScale(getDayOfYear(d.date)))
+    // 2. Force a minimum width (e.g., 1.5px) so 12h runs remain visible
+    .attr("width", (d) => {
+      const dayWidth = xScale(1) - xScale(0); // Width of one day in pixels
+      const runWidth = (d.duration / 24) * dayWidth;
+      return Math.max(1.5, runWidth);
+    })
+    // 3. Position Y based on the Year lane
+    .attr("y", (d) => {
+      return (yScale(d.date.getFullYear()) || 0) - laneHeight / 2;
+    })
+    .attr("height", laneHeight)
+    .attr("fill", COLOR.consumption) // High-contrast red
+    .on("mouseover", (_, d) => {
+      tooltip &&
+        tooltip.selection
+          .style("visibility", "visible")
+          .html(tooltip.format(d));
+    })
+    .on("mousemove", (event) => {
+      // Position the tooltip near the mouse cursor
+      tooltip &&
+        tooltip.selection
+          .style("top", `${event.pageY - 10}px`)
+          .style("left", `${event.pageX + 10}px`);
+    })
+    .on("mouseout", () => {
+      tooltip && tooltip.selection.style("visibility", "hidden");
+    });
+  // .append("title") // Native browser tooltip
+  // .text((d) => `${d.date.toLocaleDateString()}\n${d.duration} hour(s)`);
 };
 
 export {
@@ -424,4 +486,5 @@ export {
   drawBars,
   drawLine,
   drawScatterplotLine,
+  drawStackedBarcode,
 };

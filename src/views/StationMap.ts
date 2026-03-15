@@ -45,10 +45,12 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
 
           marker.on("click", () => vnode.attrs.onSelect(s.ClimateId));
         });
+      m.redraw();
     },
 
     onremove: () => {
       if (map) map.remove();
+      m.redraw();
     },
 
     view: () =>

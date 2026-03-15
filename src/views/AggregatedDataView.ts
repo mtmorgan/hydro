@@ -1,12 +1,13 @@
 import m from "mithril";
 import { DataTable, DataTableColumn } from "mithril-materialized";
 import AppState, { UsageSummaryResult } from "../models/AppState";
+import { formatDate } from "../utils/date";
 
 const CLIMATE_TABLE_COLUMNS = [
   {
     key: "start",
     title: "Start Date",
-    field: "start",
+    render: (row: UsageSummaryResult) => formatDate(row.timestamp),
     align: "left",
   },
   { key: "days", title: "Days", field: "days" },

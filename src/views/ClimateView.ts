@@ -1,6 +1,7 @@
 import m from "mithril";
 import Climate, { StationRecord } from "../models/Climate";
 import { StationMap } from "./StationMap";
+import Stations from "../models/Stations";
 import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
 import { Status } from "../models/types";
@@ -156,7 +157,8 @@ const ClimateView = () => {
           ),
           " service.",
         ]),
-
+        Stations.status !== Status.READY &&
+          m("p", "Loading climate station map..."),
         m(StationMap, {
           onSelect: (climateId) => {
             Climate.load(climateId);
