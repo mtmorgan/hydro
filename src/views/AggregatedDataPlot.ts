@@ -8,7 +8,7 @@ import {
   ChartTrace,
   selectChart,
   selectTooltip,
-  drawAxis,
+  drawAxisFromValues,
   drawDateAxis,
   drawBars,
   drawPoints,
@@ -55,7 +55,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   };
 
   // 'Degree Day' axis
-  const { scale: degreeDayScale } = drawAxis(
+  const { scale: degreeDayScale } = drawAxisFromValues(
     chart,
     "left",
     data.map((d) => d.heatDegDays),
@@ -67,7 +67,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Consumption' axis
-  const { scale: consumptionScale } = drawAxis(
+  const { scale: consumptionScale } = drawAxisFromValues(
     chart,
     "right",
     data.map((d) => d.consumption),
@@ -79,7 +79,7 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Cost' axis
-  const { scale: costScale } = drawAxis(
+  const { scale: costScale } = drawAxisFromValues(
     chart,
     "right2",
     data.map((d) => d.cost),
@@ -179,7 +179,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Degree Day' axis (x)
-  const { scale: xScale } = drawAxis(
+  const { scale: xScale } = drawAxisFromValues(
     chart,
     "bottom",
     data.map((d) => d.heatDegDays),
@@ -191,7 +191,7 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 
   // 'Consumption' axis (y)
-  const { scale: yScale } = drawAxis(
+  const { scale: yScale } = drawAxisFromValues(
     chart,
     "left",
     data.map((d) => d.consumption),

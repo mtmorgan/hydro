@@ -29,9 +29,6 @@ const AppState = {
     return IntervalDatePicker.filter(AppState.hourlyDataRecords);
   },
   recompute: () => {
-    if (EnergyUse.intervalReadingRecords.length > 0) {
-      IntervalDatePicker.init(EnergyUse.intervalReadingRecords);
-    }
     if (Climate.stationData.length === 0) return;
 
     if (EnergyUse.usageSummary.length > 0) {

@@ -29,7 +29,7 @@ const UsageSummaryDisplay: m.Component<{
 
     return m("div.card-panel", [
       m("div", [
-        m("strong", "Energy Use: "),
+        m("strong", "Monthly: "),
         `${EnergyUse.usageSummary.length} months`,
       ]),
       // Indented file names: one per line
@@ -58,7 +58,7 @@ const IntervalSummaryDisplay: m.Component<{
         title: "Start Date",
         render: (row) => formatDate(row.timestamp),
       },
-      { key: "days", title: "Days", field: "intervalCount" },
+      { key: "hours", title: "Hours", field: "intervalCount" },
       {
         key: "consumption",
         title: "Consumption (kWh)",
@@ -68,7 +68,7 @@ const IntervalSummaryDisplay: m.Component<{
 
     return m("div.card-panel", [
       m("div", [
-        m("strong", "Energy Use: "),
+        m("strong", "Daily: "),
         `${EnergyUse.intervalSummary.length} days`,
       ]),
       // Indented file names: one per line
@@ -91,8 +91,7 @@ const IntervalReadingDisplay: m.Component<{
   view: ({ attrs }) => {
     const { intervals } = attrs;
 
-    if (EnergyUse.intervalReadingRecords.length === 0)
-      return m("p.grey-text", "No hourly intervals available");
+    if (EnergyUse.intervalReadingRecords.length === 0) return;
 
     const columns: DataTableColumn<IntervalReadingRecord>[] = [
       {
@@ -114,11 +113,9 @@ const IntervalReadingDisplay: m.Component<{
 
     return m("div.card-panel", [
       m("div", [
-        m("strong", "Energy Use: "),
-        `${EnergyUse.intervalReadingRecords.length} hourly intervals;`,
+        m("strong", "Hourly: "),
+        `${EnergyUse.intervalReadingRecords.length} intervals`,
       ]),
-      // Indented file names: one per line
-      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       m(IntervalDatePickerView),
       m(".table-scroll-container", [
         m(DataTable<IntervalReadingRecord>, {
@@ -135,13 +132,20 @@ const EnergyUseView: m.Component = {
   view: () => [
     EnergyUse.fileName.length > 0
       ? [
+          // Indented file names: one per line
+          m(EnergyUseFiles),
           m(UsageSummaryDisplay, { summaryData: EnergyUse.usageSummary }),
           m(IntervalSummaryDisplay, {
             summaryData: EnergyUse.intervalSummary,
           }),
+          EnergyUse.intervalReadingRecords.length === 0 &&
+            m("p.grey-text", "No hourly intervals available"),
+
           m(IntervalReadingDisplay, {
             intervals: EnergyUse.intervalReading,
           }),
+
+          m("div.card-panel", m(PowerOutage)),
         ]
       : m(
           "p.grey-text",
