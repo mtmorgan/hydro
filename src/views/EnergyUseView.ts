@@ -8,6 +8,16 @@ import EnergyUse, {
 import IntervalDatePickerView from "./IntervalDatePickerView";
 import FileListItem from "./FileListItem";
 import { formatDate, formatHour } from "../utils/date";
+import PowerOutage from "./PowerOutage";
+
+const EnergyUseFiles: m.Component = {
+  view: () => {
+    return m("div.card-panel", [
+      m("div", m("strong", "Energy Use")),
+      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
+    ]);
+  },
+};
 
 const UsageSummaryDisplay: m.Component<{
   summaryData: UsageSummaryRecord[];
@@ -32,8 +42,6 @@ const UsageSummaryDisplay: m.Component<{
         m("strong", "Monthly: "),
         `${EnergyUse.usageSummary.length} months`,
       ]),
-      // Indented file names: one per line
-      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       m("p", "Scroll for more"),
       m(".table-scroll-container", [
         m(DataTable<UsageSummaryRecord>, {
@@ -71,8 +79,6 @@ const IntervalSummaryDisplay: m.Component<{
         m("strong", "Daily: "),
         `${EnergyUse.intervalSummary.length} days`,
       ]),
-      // Indented file names: one per line
-      EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       m("p", "Scroll for more"),
       m(".table-scroll-container", [
         m(DataTable<IntervalBlockRecord>, {

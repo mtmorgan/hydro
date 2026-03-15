@@ -1,6 +1,7 @@
 import { xpathNumber, xpathString } from "../services/xmlInput";
 import { Status } from "./types";
 import IntervalDatePicker from "./IntervalDatePicker";
+import { RunRecord, aggregateRuns } from "../services/aggregate";
 
 export interface IntervalReadingRecord {
   timestamp: number;
@@ -127,6 +128,7 @@ const EnergyUse = {
   fileName: [] as string[],
   usageSummary: [] as UsageSummaryRecord[], // billing period
   intervalSummary: [] as IntervalBlockRecord[], // daily
+  zeroConsumption: [] as RunRecord[], // runs of zero-consumption intervals
 
   // intervalReading, allowing for filter
   intervalReadingRecords: [] as IntervalReadingRecord[], // hourly; all data
@@ -148,6 +150,13 @@ const EnergyUse = {
     );
     EnergyUse.intervalReadingRecords = deduplicateSummary(
       data.flatMap((elt) => elt.intervalReading),
+    );
+
+    IntervalDatePicker.init(EnergyUse.intervalReadingRecords);
+
+    EnergyUse.zeroConsumption = aggregateRuns(
+      EnergyUse.intervalReadingRecords,
+      (d) => d.consumption === 0,
     );
 
     EnergyUse.status = Status.READY;

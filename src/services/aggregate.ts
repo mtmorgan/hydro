@@ -90,3 +90,41 @@ export const zipRecords = <T extends { timestamp: number }>(
   });
   return result;
 };
+
+export interface RunRecord {
+  timestamp: number;
+  date: Date;
+  duration: number;
+}
+
+export const aggregateRuns = <T extends { timestamp: number }>(
+  data: T[],
+  test: (d: T) => boolean,
+) => {
+  return data.reduce<{ active: RunRecord | null; completed: RunRecord[] }>(
+    (acc, d, i) => {
+      const isRun = test(d);
+
+      // Case 1: Continuing or starting a zero run
+      if (isRun) {
+        if (!acc.active) {
+          acc.active = {
+            timestamp: d.timestamp,
+            date: new Date(d.timestamp),
+            duration: 0,
+          };
+        }
+        acc.active.duration++;
+      }
+
+      // Case 2: Run just ended OR we are at the very last element
+      if ((!isRun || i === data.length - 1) && acc.active) {
+        acc.completed.push(acc.active);
+        acc.active = null;
+      }
+
+      return acc;
+    },
+    { active: null, completed: [] },
+  ).completed;
+};
