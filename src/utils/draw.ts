@@ -9,6 +9,8 @@ const COLOR = {
   degreeDay: "#B0BEC5",
   consumption: "#3F51B5",
   cost: "#FFC107",
+  temperature: "#FF5722",
+  precipitation: "#03A9F4",
 };
 
 interface VnodeDOMAttrs<T> {
@@ -247,6 +249,7 @@ export const drawDateAxis = (
   fill: string,
   lastCycleDays: number = 0, // allow for end of cycle
   className: string = "chart-date",
+  tickFormatString: string = "%b %Y",
 ) => {
   const strategy = DATE_AXIS_CONFIG[position];
 
@@ -284,7 +287,7 @@ export const drawDateAxis = (
 
   // Layer B: Quarterly Labels (Large ticks + Date format)
   axisGroup
-    .selectAll<SVGGElement, null>(".labels-quarterly")
+    .selectAll<SVGGElement, null>(".labels-month")
     .data([null])
     .join("g")
     .attr("class", "labels-quarterly")
@@ -293,7 +296,7 @@ export const drawDateAxis = (
         .axisBottom(scale)
         .ticks(d3.timeMonth.every(3))
         .tickSize(9)
-        .tickFormat(d3.timeFormat("%b %Y") as any),
+        .tickFormat(d3.timeFormat(tickFormatString) as any),
     );
 
   // 4. Render Label

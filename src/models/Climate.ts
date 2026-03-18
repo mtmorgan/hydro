@@ -2,6 +2,7 @@ import AppState from "./AppState";
 import Stations from "./Stations";
 import { memoizedJSONRequest } from "../utils/memoize";
 import { FeatureCollection } from "geojson";
+import * as d3 from "d3";
 import { Status } from "./types";
 
 export interface StationRecord {
@@ -11,6 +12,10 @@ export interface StationRecord {
   heatDegDays: number | null;
   coolDegDays: number | null;
   totalPrecipitation: number | null;
+}
+
+export interface MonthlyRecord extends StationRecord {
+  date: Date;
 }
 
 export interface StationInformation {
@@ -82,6 +87,7 @@ const Climate = {
   climateId: null as string | null,
   stationInformation: null as StationInformation | null,
   stationData: [] as StationRecord[],
+  monthlyData: [] as MonthlyRecord[],
 
   load: async (climateId: string) => {
     Climate.status = Status.LOADING;
@@ -106,6 +112,27 @@ const Climate = {
       longitude: stationRecord.Longitude,
       name: stationRecord.Name,
     };
+    const referenceYear = 2022; // Arbitrary
+    Climate.monthlyData = d3
+      .rollups(
+        Climate.stationData,
+        (v) => ({
+          meantemp: d3.mean(v, (d) => d.meantemp) || 0,
+          heatDegDays: d3.sum(v, (d) => d.heatDegDays) || 0,
+          coolDegDays: d3.sum(v, (d) => d.coolDegDays) || 0,
+          totalPrecipitation: d3.mean(v, (d) => d.totalPrecipitation) || 0,
+        }),
+        (d) => {
+          // Force all dates to the same reference year
+          const m = new Date(d.timestamp).getMonth();
+          return new Date(referenceYear, m, 1);
+        },
+      )
+      .map(([week, stats]) => ({
+        date: week,
+        timestamp: week.getTime(),
+        ...stats,
+      }));
 
     Climate.status = Status.READY;
     AppState.recompute();
