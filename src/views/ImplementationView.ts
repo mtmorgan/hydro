@@ -22,7 +22,7 @@ const ImplimentationView: m.Component = {
           "Mithril-Materialized",
         ),
         " components. I also learned about XML parsing in JavaScript,",
-        "compleneting my knowledge of xpath in R.",
+        "complementing my knowledge of xpath in R.",
       ),
       m(
         "p",
