@@ -51,23 +51,21 @@ const CLIMATE_TABLE_COLUMNS = [
 
 const AggregatedDataTable = {
   view: () => [
-    m(
-      "p",
-      m("strong", [
-        "Climate and energy use",
-        AppState.stationData.length > 0 &&
-          ` for ${AppState.stationData.length} months (scroll for more)`,
+    m("strong", "Climate and energy use"),
+    AppState.stationData.length > 0 && [
+      m(
+        "p",
+        `${AppState.stationData.length} billing periods (scroll for more)`,
+      ),
+      m(".table-scroll-container", [
+        m(DataTable<UsageSummaryResult>, {
+          className: "highlight",
+          columns: CLIMATE_TABLE_COLUMNS,
+          data: AppState.stationData,
+          sortBy: "startFormatted",
+        }),
       ]),
-    ),
-    m(".table-scroll-container", [
-      m(DataTable<UsageSummaryResult>, {
-        className: "highlight",
-        columns: CLIMATE_TABLE_COLUMNS,
-        data: AppState.stationData,
-        sortBy: "startFormatted",
-        i18n: { noDataAvailable: "Select hydro and climate data." },
-      }),
-    ]),
+    ],
   ],
 };
 

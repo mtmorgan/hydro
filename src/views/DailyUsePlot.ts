@@ -100,15 +100,12 @@ const DailyHeatingConsumption: m.ClosureComponent<Attrs> = () => {
 
 const DailyUsePlot: m.Component = {
   view: () => [
-    m(
-      "div.card-panel",
-      m("p", m("stong", "Daily heating degree days and consumption")),
-      AppState.dailyData.length > 0 &&
-        m(DailyHeatingConsumption, {
-          aggregatedData: AppState.dailyData,
-          clientHeight: 0,
-        }),
-    ),
+    m("strong", "Daily heating degree days and consumption"),
+    AppState.dailyData.length > 0 &&
+      m(DailyHeatingConsumption, {
+        aggregatedData: AppState.dailyData,
+        clientHeight: 0,
+      }),
   ],
 };
 

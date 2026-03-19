@@ -1,7 +1,7 @@
 import m from "mithril";
 import AggregatedDataPlot from "./AggregatedDataPlot";
 import DailyUsePlot from "./DailyUsePlot";
-import AggregatedDataTable from "./AggregatedDataView";
+import AggregatedDataTable from "./AggregatedDataTable";
 import Climate from "../models/Climate";
 import Customer from "../models/Customer";
 import EnergyUse from "../models/EnergyUse";
@@ -10,28 +10,37 @@ import { Status } from "../models/types";
 
 const InsightView: m.Component = {
   view: () => [
-    m("div.card-panel", { style: "line-height: 1.5;" }, [
+    (Customer.status !== Status.READY ||
+      EnergyUse.status !== Status.READY ||
+      Climate.status !== Status.READY) &&
+      m(
+        "div.card-panel",
+        m(
+          "p.grey-text",
+          "Select hydro customer and energy use files, and a climate station.",
+        ),
+      ),
+    m("div.card-panel", [
+      m("strong", "Hydro and climate station input"),
+
       Customer.status === Status.READY && [
-        m("div", [m("strong", "Customer: "), Customer.address?.name]),
+        m("div", `Customer: ${Customer.address?.name}`),
         m(FileListItem, { name: Customer.fileName as string }),
       ],
       EnergyUse.status === Status.READY && [
-        m("div", [
-          m("strong", "Energy Use: "),
-          `${EnergyUse.usageSummary.length} months`,
-        ]),
+        m(
+          "div",
+          `Energy Use: ${EnergyUse.usageSummary.length} billing periods`,
+        ),
         // Indented file names: one per line
         EnergyUse.fileName.map((name) => m(FileListItem, { name: name })),
       ],
-      Climate.stationInformation &&
-        m("div", [
-          m("strong", "Climate Station: "),
-          Climate.stationInformation.name,
-        ]),
+      Climate.status === Status.READY &&
+        m("div", `Climate Station: ${Climate.stationInformation?.name}`),
     ]),
     m("div.card-panel", m(AggregatedDataTable)),
-    m(AggregatedDataPlot),
-    m(DailyUsePlot),
+    m("div.card-panel", m(AggregatedDataPlot)),
+    m("div.card-panel", m(DailyUsePlot)),
   ],
 };
 

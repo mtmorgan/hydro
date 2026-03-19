@@ -241,29 +241,17 @@ const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
 
 const AggregatedDataPlot = {
   view: () => [
-    m(
-      "div.card-panel",
-      m(
-        "p",
-        m("strong", "Heating degree days, consumption, and cost over time"),
-      ),
-      AppState.stationData.length === 0
-        ? m("div.d3-empty-chart", "Select hydro and climate data.")
-        : m(HeatingConsumptionCost, {
-            aggregatedData: AppState.stationData,
-            clientHeight: 400,
-          }),
-    ),
-    m(
-      "div.card-panel",
-      m("p", m("strong", "Heating degree days and consumption")),
-      AppState.stationData.length === 0
-        ? m("div.d3-empty-chart", "Select hydro and climate data.")
-        : m(HeatingConsumption, {
-            aggregatedData: AppState.stationData,
-            clientHeight: 0,
-          }),
-    ),
+    m("p", m("strong", "Heating degree days, consumption, and cost over time")),
+    AppState.stationData.length !== 0 &&
+      m(HeatingConsumptionCost, {
+        aggregatedData: AppState.stationData,
+        clientHeight: 400,
+      }),
+    AppState.stationData.length !== 0 &&
+      m(HeatingConsumption, {
+        aggregatedData: AppState.stationData,
+        clientHeight: 0,
+      }),
   ],
 };
 
