@@ -27,6 +27,8 @@ export interface UsageSummaryRecord {
   reading: string;
 }
 
+export interface HourlyResult extends IntervalReadingRecord {}
+
 export interface EnergyUseRecord {
   intervalReading: IntervalReadingRecord[];
   intervalBlock: IntervalBlockRecord[];
@@ -133,7 +135,12 @@ const EnergyUse = {
   // intervalReading, allowing for filter
   intervalReadingRecords: [] as IntervalReadingRecord[], // hourly; all data
   get intervalReading() {
-    return IntervalDatePicker.filter(this.intervalReadingRecords);
+    return IntervalDatePicker.filter(EnergyUse.intervalReadingRecords);
+  },
+
+  hourlyDataRecords: [] as HourlyResult[],
+  get hourlyData() {
+    return IntervalDatePicker.filter(EnergyUse.hourlyDataRecords);
   },
 
   init: (energyUseInput: EnergyUseInput[]) => {
@@ -158,6 +165,8 @@ const EnergyUse = {
       EnergyUse.intervalReadingRecords,
       (d) => d.consumption === 0,
     );
+
+    EnergyUse.hourlyDataRecords = EnergyUse.intervalReadingRecords;
 
     EnergyUse.status = Status.READY;
   },

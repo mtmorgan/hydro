@@ -1,6 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
-import AppState, { HourlyResult } from "../models/AppState";
+import EnergyUse, { HourlyResult } from "../models/EnergyUse";
 import IntervalDatePickerView from "./IntervalDatePickerView";
 import {
   MARGIN,
@@ -129,9 +129,9 @@ const HourlyUsePlot: m.Component = {
     m(
       "div.card-panel",
       m("p", m("stong", "Hourly consumption")),
-      AppState.hourlyData.length > 0 &&
+      EnergyUse.hourlyData.length > 0 &&
         m(HourlyConsumption, {
-          aggregatedData: AppState.hourlyData,
+          aggregatedData: EnergyUse.hourlyData,
           clientHeight: 400,
         }),
     ),
