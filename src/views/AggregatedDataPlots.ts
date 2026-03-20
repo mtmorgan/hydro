@@ -239,7 +239,7 @@ const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
   };
 };
 
-const AggregatedDataPlot = {
+const AggregatedDataPlots = {
   view: () => [
     m("p", m("strong", "Heating degree days, consumption, and cost over time")),
     AppState.stationData.length !== 0 &&
@@ -255,4 +255,4 @@ const AggregatedDataPlot = {
   ],
 };
 
-export default AggregatedDataPlot;
+export default AggregatedDataPlots;

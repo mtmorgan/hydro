@@ -164,7 +164,7 @@ const PowerOutageBarcodePlot: m.ClosureComponent<Attrs> = () => {
   };
 };
 
-const PowerOutage: m.Component = {
+const EnergyUsePowerOutagePlot: m.Component = {
   view: () => [
     EnergyUse.zeroConsumption.length > 0 &&
       m(PowerOutageTable, { runs: EnergyUse.zeroConsumption }),
@@ -177,4 +177,4 @@ const PowerOutage: m.Component = {
   ],
 };
 
-export default PowerOutage;
+export default EnergyUsePowerOutagePlot;

@@ -31,7 +31,7 @@ const labelValueView: m.Component<LabelValueViewAttrs> = {
   },
 };
 
-const StationView: m.Component = {
+const ClimateStation: m.Component = {
   view: () => {
     const { climateId, stationInformation } = Climate;
     if (stationInformation === null) return;
@@ -58,7 +58,7 @@ const StationView: m.Component = {
   },
 };
 
-const StationDataView: m.Component = {
+const ClimateDataTable: m.Component = {
   view: () => {
     const { stationData } = Climate;
     const nMissing = stationData.filter((day) => day.meantemp === null).length;
@@ -168,12 +168,10 @@ const drawWeeklyClimate = (vnode: m.VnodeDOM<WeeklyClimateAttrs>) => {
     "month-meantemp",
   );
 
-  const values = data.map((d) => d.totalPrecipitation!);
-  values.push(0);
   const { scale: precipitationScale } = drawAxisFromValues(
     chart,
     "right2",
-    values,
+    [0, d3.max(data, (d) => d.totalPrecipitation)!],
     "Mean Daily Precipitation (mm)",
     width,
     height,
@@ -221,7 +219,7 @@ const drawWeeklyClimate = (vnode: m.VnodeDOM<WeeklyClimateAttrs>) => {
   );
 };
 
-const WeeklyClimatePlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
+const ClimateWeeklyPlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
   let observer: ResizeObserver;
   return {
     oncreate: (vnode) => {
@@ -259,9 +257,9 @@ const ClimateView = () => {
 
           case Status.READY:
             return [
-              m(StationView),
-              m(StationDataView),
-              m(WeeklyClimatePlot, {
+              m(ClimateStation),
+              m(ClimateDataTable),
+              m(ClimateWeeklyPlot, {
                 aggregatedData: Climate.monthlyData,
                 clientHeight: 400,
               }),

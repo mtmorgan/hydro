@@ -124,7 +124,7 @@ const HourlyConsumption: m.ClosureComponent<Attrs> = () => {
   };
 };
 
-const HourlyUsePlot: m.Component = {
+const EnergyUseHourlyPlot: m.Component = {
   view: () => [
     m(
       "div.card-panel",
@@ -138,4 +138,4 @@ const HourlyUsePlot: m.Component = {
   ],
 };
 
-export default HourlyUsePlot;
+export default EnergyUseHourlyPlot;

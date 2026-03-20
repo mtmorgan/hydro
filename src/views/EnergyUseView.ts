@@ -8,8 +8,8 @@ import EnergyUse, {
 import IntervalDatePickerView from "./IntervalDatePickerView";
 import FileListItem from "./FileListItem";
 import { formatDate, formatHour } from "../utils/date";
-import PowerOutage from "./PowerOutage";
-import HourlyUsePlot from "./HourlyUsePlot";
+import EnergyUsePowerOutagePlot from "./EnergyUsePowerOutagePlot";
+import EnergyUseHourlyPlot from "./EnergyUseHourlyPlot";
 
 const EnergyUseFiles: m.Component = {
   view: () => {
@@ -152,8 +152,8 @@ const EnergyUseView: m.Component = {
             intervals: EnergyUse.intervalReading,
           }),
 
-          m("div.card-panel", m(PowerOutage)),
-          m(HourlyUsePlot),
+          m("div.card-panel", m(EnergyUsePowerOutagePlot)),
+          m(EnergyUseHourlyPlot),
         ]
       : m(
           "p.grey-text",

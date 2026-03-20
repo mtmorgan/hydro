@@ -1,5 +1,5 @@
 import m from "mithril";
-import AggregatedDataPlot from "./AggregatedDataPlot";
+import AggregatedDataPlots from "./AggregatedDataPlots";
 import DailyUsePlot from "./DailyUsePlot";
 import AggregatedDataTable from "./AggregatedDataTable";
 import Climate from "../models/Climate";
@@ -39,7 +39,7 @@ const InsightView: m.Component = {
         m("div", `Climate Station: ${Climate.stationInformation?.name}`),
     ]),
     m("div.card-panel", m(AggregatedDataTable)),
-    m("div.card-panel", m(AggregatedDataPlot)),
+    m("div.card-panel", m(AggregatedDataPlots)),
     m("div.card-panel", m(DailyUsePlot)),
   ],
 };
