@@ -136,7 +136,7 @@ const ClimateView = () => {
                 clientHeight: 400,
               }),
               m(ClimateCummulativeDegreeDayPlot, {
-                aggregatedData: Climate.monthlyData,
+                aggregatedData: Climate.stationData,
                 clientHeight: 400,
               }),
             ];

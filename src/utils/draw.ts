@@ -7,6 +7,8 @@ const COLOR = {
   time: "black",
   day: "black",
   degreeDay: "#B0BEC5",
+  heatDegreeDay: "#00A8FF",
+  coolDegreeDay: "#FF5722",
   consumption: "#3F51B5",
   cost: "#FFC107",
   temperature: "#FF5722",
