@@ -41,7 +41,7 @@ const requestStations = async () => {
     >(url, "stations");
 
     // Filter
-    const firstTime = new Date("2022-01-01").getTime();
+    const firstTime = new Date("2020-01-01").getTime();
     const lastDate = new Date();
     lastDate.setDate(lastDate.getDate() - 7);
     const lastTime = lastDate.getTime();

@@ -43,7 +43,7 @@ const dailyDataPropertyMap: Record<keyof DailyDataProperties, undefined> = {
 
 const requestDailyData = async (climateId: string) => {
   Climate.status = Status.LOADING;
-  const from = new Date("2022-01-01").toISOString();
+  const from = new Date("2020-01-01").toISOString();
   const dateInterval = `${from}/..`;
   const properties = Object.keys(dailyDataPropertyMap).join(",");
   const url =
