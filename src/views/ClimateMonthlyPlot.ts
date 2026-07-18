@@ -124,7 +124,7 @@ const ClimateMonthlyPlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
         m(
           "p",
           "The chart below shows monthly heat degree days, temperature, and ",
-          `precipitation since 2020 at ${Climate.stationInformation!.name}.`,
+          `precipitation since 2020 at ${Climate.stationInformation?.name}.`,
         ),
       );
     },

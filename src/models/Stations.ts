@@ -55,39 +55,50 @@ const requestStations = async () => {
       return first && first < firstTime && last && last > lastTime;
     });
 
-    Stations.stations = data;
+    Stations.records = data.features.map((stn) => {
+      return {
+        ClimateId: String(stn.properties.CLIMATE_IDENTIFIER),
+        Name: stn.properties.STATION_NAME,
+        Longitude: stn.geometry.coordinates[0],
+        Latitude: stn.geometry.coordinates[1],
+        Elevation: stn.properties.ELEVATION,
+      } as StationRecord;
+    });
+
     Stations.status = Status.READY;
   } catch (err) {
     Stations.error = "Cache / Network Error: " + err;
     Stations.status = Status.ERROR;
-    console.log(Stations.error);
   }
 };
 
 const Stations = {
-  stations: null as FeatureCollection<Point, ClimateStationProperties> | null,
+  records: [] as StationRecord[],
   status: Status.IDLE,
   error: "",
-  list: [] as StationRecord[] | null,
 
   init: async () => {
+    if (Stations.records.length > 0) return;
     await requestStations();
-    Stations.list =
-      Stations.stations &&
-      Stations.stations.features.map((stn) => {
-        return {
-          ClimateId: String(stn.properties.CLIMATE_IDENTIFIER),
-          Name: stn.properties.STATION_NAME,
-          Longitude: stn.geometry.coordinates[0],
-          Latitude: stn.geometry.coordinates[1],
-          Elevation: stn.properties.ELEVATION,
-        } as StationRecord;
-      });
   },
 
-  // Helper to get full info by ID
-  getByClimateId: (climateId: string) =>
-    Stations.list && Stations.list.find((s) => s.ClimateId === climateId),
+  getStations: async () => {
+    await Stations.init();
+    return Stations.records;
+  },
+
+  // Get station information by climateId
+  getByClimateId: async (climateId: string) => {
+    await Stations.init();
+    const station = Stations.records.find((s) => s.ClimateId === climateId);
+    if (!station) {
+      Stations.error = `Climate station with climateId ${climateId} not found`;
+      Stations.status = Status.ERROR;
+    } else {
+      Stations.status = Status.READY;
+    }
+    return station;
+  },
 };
 
 export default Stations;

@@ -8,43 +8,60 @@ import {
   COLOR,
   VnodeDOMAttrs,
   selectChart,
+  drawDateAxis,
   drawAxisFromValues,
-  drawPoints,
+  drawScatterplotLine,
+  selectTooltip,
 } from "../utils/draw";
-import { dayOfYear } from "../utils/date";
+import { timestampMonth } from "../utils/date";
 
-interface CumulativeRecord extends StationRecord {
-  dayOfYear: number;
-  cumulativeHeatDegDays: number;
-  cumulativeCoolDegDays: number;
+interface CumulativeRecord {
+  year: number;
+  values: {
+    date: Date;
+    cumulativeHeatDegDays: number;
+    cumulativeCoolDegDays: number;
+  }[];
 }
 
 interface StationRecordAttrs extends VnodeDOMAttrs<StationRecord> {}
 
 const summarizeDegreeDayData = (data: StationRecord[]): CumulativeRecord[] => {
-  // Sort and group by year
-  const sorted = d3.sort(data, (d) => d.timestamp);
-  const groupedByYear = d3.groups(sorted, (d) =>
-    new Date(d.timestamp).getFullYear(),
+  // Aggregate by year and month
+  const monthlyData = d3.rollups(
+    data,
+    (v) => ({
+      timestamp: d3.min(v, (d) => d.timestamp)!,
+      heatDegDays: d3.sum(v, (d) => d.heatDegDays),
+      coolDegDays: d3.sum(v, (d) => d.coolDegDays),
+    }),
+    (d) => new Date(d.timestamp).getFullYear(), // Group by Year
+    (d) => new Date(d.timestamp).getMonth(), // Group by Month (0-11)
   );
 
-  // Compute running sum per year
-  const resultMap = new Map<number, CumulativeRecord[]>();
-  for (const [year, records] of groupedByYear) {
-    // d3.cumsum returns an optimized Float64Array of running totals
-    const runningHeatDegDays = d3.cumsum(records, (d) => d.heatDegDays ?? 0);
-    const runningCoolDegDays = d3.cumsum(records, (d) => d.coolDegDays ?? 0);
-    const cumulativeRecords = records.map((record, index) => ({
-      ...record,
-      dayOfYear: dayOfYear(record.timestamp),
-      cumulativeHeatDegDays: runningHeatDegDays[index],
-      cumulativeCoolDegDays: runningCoolDegDays[index],
-    }));
+  // Cumulative sum within year
+  const cumulativeData = monthlyData.flatMap(([year, monthsList]) => {
+    // Sort months chronologically (0 to 11) to guarantee accurate accumulation
+    monthsList.sort((a, b) => a[0] - b[0]);
+    const timestamp = monthsList.map(([_, totals]) => totals.timestamp);
+    const hddValues = monthsList.map(([_, totals]) => totals.heatDegDays);
+    const cddValues = monthsList.map(([_, totals]) => totals.coolDegDays);
 
-    resultMap.set(year, cumulativeRecords);
-  }
+    // Generate cumulative arrays
+    const hddCumulative = d3.cumsum(hddValues);
+    const cddCumulative = d3.cumsum(cddValues);
 
-  return [...resultMap.values()].flatMap((records) => records);
+    return {
+      year: year,
+      values: monthsList.map((_, index) => ({
+        date: timestampMonth(timestamp[index]),
+        cumulativeHeatDegDays: hddCumulative[index],
+        cumulativeCoolDegDays: cddCumulative[index],
+      })),
+    };
+  });
+
+  return cumulativeData;
 };
 
 const drawClimateCummulativeDegreeDayPlot = (
@@ -63,56 +80,82 @@ const drawClimateCummulativeDegreeDayPlot = (
     clientHeight,
   );
 
-  const { scale: xScale } = drawAxisFromValues(
+  const monthExtent = d3.extent(
+    data.flatMap((record) => record.values.map((v) => v.date)),
+  ) as [Date, Date];
+
+  const { scale: xScale } = drawDateAxis(
     chart,
     "bottom",
-    data.map((d) => d.dayOfYear!),
-    "Day of Year",
+    monthExtent,
+    "Month",
     width,
     height,
     COLOR.time,
-    "month-hdd",
+    31,
+    "month-date",
+    "%B",
   );
 
   const { scale: coolScale } = drawAxisFromValues(
     chart,
     "left",
-    data.map((d) => d.cumulativeCoolDegDays!),
+    [0, d3.max(data, (y) => d3.max(y.values, (d) => d.cumulativeCoolDegDays))!],
     "Cooling Degree Days",
     width,
     height,
     COLOR.coolDegreeDay,
-    "month-cdd",
+    "cdd-scale",
   );
 
   const { scale: heatScale } = drawAxisFromValues(
     chart,
     "right",
-    data.map((d) => d.cumulativeHeatDegDays!),
+    [0, d3.max(data, (y) => d3.max(y.values, (d) => d.cumulativeHeatDegDays))!],
     "Heating Degree Days",
     width,
     height,
     COLOR.heatDegreeDay,
-    "month-hdd",
+    "hdd-scale",
   );
 
-  drawPoints(
-    chart,
-    data,
-    "heat-degree-days",
-    (d) => xScale(d.dayOfYear),
-    (d) => heatScale(d.cumulativeHeatDegDays),
-    COLOR.heatDegreeDay,
-  );
+  data.forEach((yearly) => {
+    const tooltip = selectTooltip<StationRecordAttrs, { date: Date }>(
+      vnode,
+      `degree-days-${yearly.year}`,
+      (_) => String(yearly.year),
+    );
 
-  drawPoints(
-    chart,
-    data,
-    "cool-degree-days",
-    (d) => xScale(d.dayOfYear),
-    (d) => coolScale(d.cumulativeCoolDegDays),
-    COLOR.coolDegreeDay,
-  );
+    drawScatterplotLine(
+      chart,
+      yearly.values,
+      `heat-degree-days-${yearly.year}`,
+      (d) => {
+        const start = xScale(d.date);
+        const end = xScale(d3.timeMonth.offset(d.date, 1));
+        return start + (end - start) / 2;
+      },
+      (d) => heatScale(d.cumulativeHeatDegDays),
+      COLOR.heatDegreeDay,
+      COLOR.heatDegreeDay,
+      tooltip,
+    );
+
+    drawScatterplotLine(
+      chart,
+      yearly.values,
+      `cool-degree-days-${yearly.year}`,
+      (d) => {
+        const start = xScale(d.date);
+        const end = xScale(d3.timeMonth.offset(d.date, 1));
+        return start + (end - start) / 2;
+      },
+      (d) => coolScale(d.cumulativeCoolDegDays),
+      COLOR.coolDegreeDay,
+      COLOR.coolDegreeDay,
+      tooltip,
+    );
+  });
 };
 
 const ClimateCummulativeDegreeDayPlot: m.ClosureComponent<
@@ -135,8 +178,9 @@ const ClimateCummulativeDegreeDayPlot: m.ClosureComponent<
         "div.chart-container",
         m(
           "p",
+          "What has the temperture been like over the last several years? ",
           "The chart below shows cummulative heating and cooling degree days ",
-          `since 2020 at ${Climate.stationInformation!.name}.`,
+          `since 2020 at ${Climate.stationInformation?.name}.`,
         ),
       );
     },

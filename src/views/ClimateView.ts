@@ -2,8 +2,8 @@ import m from "mithril";
 import Climate, { StationRecord } from "../models/Climate";
 import ClimateMonthlyPlot from "./ClimateMonthlyPlot";
 import ClimateCummulativeDegreeDayPlot from "./ClimateCummulativeDegreeDayPlot";
-import { StationMap } from "./StationMap";
 import Stations from "../models/Stations";
+import { StationMap } from "./StationMap";
 import { DataTable } from "mithril-materialized";
 import { formatDate } from "../utils/date";
 import { Status } from "../models/types";
@@ -116,6 +116,13 @@ const ClimateDataTable: m.Component = {
 
 const ClimateView = () => {
   return {
+    oninit: async () => {
+      await Stations.init();
+      await Climate.oninit();
+      Climate.climateId && (await Climate.load(Climate.climateId));
+      console.log("ClimateView.oninit", Stations.records.length);
+    },
+
     view: () => {
       const renderClimateReadyStatus = () => {
         switch (Climate.status) {
@@ -124,7 +131,10 @@ const ClimateView = () => {
 
           case Status.ERROR:
             return m(".error-box", [
-              m("p.red-text", "Error loading climate station data."),
+              m(
+                "p.red-text",
+                `Error loading climate station data: ${Climate.error}`,
+              ),
             ]);
 
           case Status.READY:
@@ -171,7 +181,7 @@ const ClimateView = () => {
           " service.",
         ]),
         Stations.status !== Status.READY &&
-          m("p", "Loading climate station map..."),
+          m("p.grey-text", "Loading climate station map..."),
         m(StationMap, {
           onSelect: (climateId) => {
             Climate.load(climateId);
