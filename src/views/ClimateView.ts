@@ -1,6 +1,7 @@
 import m from "mithril";
 import Climate, { StationRecord } from "../models/Climate";
 import ClimateMonthlyPlot from "./ClimateMonthlyPlot";
+import ClimateAnnualTable from "./ClimateAnnualTable";
 import ClimateCummulativeDegreeDayPlot from "./ClimateCummulativeDegreeDayPlot";
 import Stations from "../models/Stations";
 import { StationMap } from "./StationMap";
@@ -120,7 +121,6 @@ const ClimateView = () => {
       await Stations.init();
       await Climate.oninit();
       Climate.climateId && (await Climate.load(Climate.climateId));
-      console.log("ClimateView.oninit", Stations.records.length);
     },
 
     view: () => {
@@ -144,6 +144,10 @@ const ClimateView = () => {
               m(ClimateMonthlyPlot, {
                 aggregatedData: Climate.monthlyData,
                 clientHeight: 400,
+              }),
+              m("h3", "Each Year..."),
+              m(ClimateAnnualTable, {
+                data: Climate.monthlyData,
               }),
               m(ClimateCummulativeDegreeDayPlot, {
                 aggregatedData: Climate.stationData,
