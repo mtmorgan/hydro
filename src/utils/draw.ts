@@ -44,6 +44,29 @@ interface Tooltip<T> {
   format: (d: T) => string;
 }
 
+/**
+ * Converts a decimal alpha value (0 to 1) to a 2-character hex string.
+ */
+const scaleAlphaToHex = (alpha: number): string => {
+  // Clamp alpha between 0 and 1
+  const clamped = Math.max(0, Math.min(1, alpha));
+  const hex = Math.round(clamped * 255)
+    .toString(16)
+    .toUpperCase();
+  return hex.padStart(2, "0");
+};
+
+/**
+ * Appends an alpha channel to a 6-character hex string.
+ * Example: getHexAlpha("#FF5722", 0.8) -> "#FF5722CC"
+ */
+const getHexAlpha = (hex: string, alpha: number): string => {
+  const cleanHex = hex.startsWith("#") ? hex : `#${hex}`;
+  // Return early if it's already an 8-digit hex or shorthand
+  if (cleanHex.length !== 7) return cleanHex;
+  return `${cleanHex}${scaleAlphaToHex(alpha)}`;
+};
+
 const selectChart = <T>(
   vnode: m.VnodeDOM<T>,
   className: string,
@@ -483,6 +506,8 @@ export {
   // interfaces
   VnodeDOMAttrs,
   ChartTrace,
+  // utility
+  getHexAlpha,
   // select
   selectChart,
   selectTooltip,

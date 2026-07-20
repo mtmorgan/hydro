@@ -2,7 +2,7 @@ import m from "mithril";
 import Climate, { StationRecord } from "../models/Climate";
 import ClimateMonthlyPlot from "./ClimateMonthlyPlot";
 import ClimateAnnualTable from "./ClimateAnnualTable";
-import ClimateCummulativeDegreeDayPlot from "./ClimateCummulativeDegreeDayPlot";
+import ClimateCumulativeDegreeDayPlot from "./ClimateCumulativeDegreeDayPlot";
 import Stations from "../models/Stations";
 import { StationMap } from "./StationMap";
 import { DataTable } from "mithril-materialized";
@@ -149,7 +149,7 @@ const ClimateView = () => {
               m(ClimateAnnualTable, {
                 data: Climate.stationData,
               }),
-              m(ClimateCummulativeDegreeDayPlot, {
+              m(ClimateCumulativeDegreeDayPlot, {
                 aggregatedData: Climate.stationData,
                 clientHeight: 400,
               }),

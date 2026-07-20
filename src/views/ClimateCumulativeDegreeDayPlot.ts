@@ -12,6 +12,7 @@ import {
   drawAxisFromValues,
   drawScatterplotLine,
   selectTooltip,
+  getHexAlpha,
 } from "../utils/draw";
 import { timestampMonth } from "../utils/date";
 
@@ -26,7 +27,9 @@ interface CumulativeRecord {
 
 interface StationRecordAttrs extends VnodeDOMAttrs<StationRecord> {}
 
-const summarizeDegreeDayData = (data: StationRecord[]): CumulativeRecord[] => {
+const calculateCumulativeRecord = (
+  data: StationRecord[],
+): CumulativeRecord[] => {
   // Aggregate by year and month
   const monthlyData = d3.rollups(
     data,
@@ -40,7 +43,7 @@ const summarizeDegreeDayData = (data: StationRecord[]): CumulativeRecord[] => {
   );
 
   // Cumulative sum within year
-  const cumulativeData = monthlyData.flatMap(([year, monthsList]) => {
+  const cumulativeRecords = monthlyData.flatMap(([year, monthsList]) => {
     // Sort months chronologically (0 to 11) to guarantee accurate accumulation
     monthsList.sort((a, b) => a[0] - b[0]);
     const timestamp = monthsList.map(([_, totals]) => totals.timestamp);
@@ -61,7 +64,7 @@ const summarizeDegreeDayData = (data: StationRecord[]): CumulativeRecord[] => {
     };
   });
 
-  return cumulativeData;
+  return cumulativeRecords;
 };
 
 const drawClimateCummulativeDegreeDayPlot = (
@@ -119,13 +122,15 @@ const drawClimateCummulativeDegreeDayPlot = (
     "hdd-scale",
   );
 
-  data.forEach((yearly) => {
+  let color: string;
+  data.forEach((yearly, index) => {
     const tooltip = selectTooltip<StationRecordAttrs, { date: Date }>(
       vnode,
       `degree-days-${yearly.year}`,
       (_) => String(yearly.year),
     );
 
+    color = getHexAlpha(COLOR.heatDegreeDay, (index + 1) / data.length);
     drawScatterplotLine(
       chart,
       yearly.values,
@@ -136,11 +141,12 @@ const drawClimateCummulativeDegreeDayPlot = (
         return start + (end - start) / 2;
       },
       (d) => heatScale(d.cumulativeHeatDegDays),
-      COLOR.heatDegreeDay,
-      COLOR.heatDegreeDay,
+      color,
+      color,
       tooltip,
     );
 
+    color = getHexAlpha(COLOR.coolDegreeDay, (index + 1) / data.length);
     drawScatterplotLine(
       chart,
       yearly.values,
@@ -151,8 +157,8 @@ const drawClimateCummulativeDegreeDayPlot = (
         return start + (end - start) / 2;
       },
       (d) => coolScale(d.cumulativeCoolDegDays),
-      COLOR.coolDegreeDay,
-      COLOR.coolDegreeDay,
+      color,
+      color,
       tooltip,
     );
   });
@@ -161,28 +167,44 @@ const drawClimateCummulativeDegreeDayPlot = (
 const ClimateCummulativeDegreeDayPlot: m.ClosureComponent<
   StationRecordAttrs
 > = () => {
-  let degreeDayData: CumulativeRecord[];
+  let cumulativeRecords: CumulativeRecord[];
   let observer: ResizeObserver;
+
   return {
+    // Changing aggregatedData
+    oninit: (vnode) => {
+      cumulativeRecords = calculateCumulativeRecord(vnode.attrs.aggregatedData);
+    },
+
+    onbeforeupdate: (vnode, old) => {
+      if (vnode.attrs.aggregatedData !== old.attrs.aggregatedData)
+        cumulativeRecords = calculateCumulativeRecord(
+          vnode.attrs.aggregatedData,
+        );
+    },
+
+    // ResizeObserver
     oncreate: (vnode) => {
-      degreeDayData = summarizeDegreeDayData(vnode.attrs.aggregatedData);
-      drawClimateCummulativeDegreeDayPlot(degreeDayData, vnode);
       observer = new ResizeObserver(() => m.redraw());
       observer.observe(vnode.dom);
     },
-    onupdate: (vnode) =>
-      drawClimateCummulativeDegreeDayPlot(degreeDayData, vnode),
+
     onremove: () => observer.disconnect(),
+
+    // View, including plot
+    onupdate: (vnode) =>
+      drawClimateCummulativeDegreeDayPlot(cumulativeRecords, vnode),
+
     view: () => {
-      return m(
-        "div.chart-container",
+      return [
         m(
           "p",
           "What has the temperture been like over the last several years? ",
           "The chart below shows cummulative heating and cooling degree days ",
           `since 2020 at ${Climate.stationInformation?.name}.`,
         ),
-      );
+        m("div.chart-container"),
+      ];
     },
   };
 };
