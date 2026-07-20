@@ -4,12 +4,12 @@ import {
   DataTableColumn,
   CellRendererAttrs,
 } from "mithril-materialized";
-import Climate, { MonthlyRecord, StationRecord } from "../models/Climate";
+import { StationRecord } from "../models/Climate";
 
 import * as d3 from "d3";
 
-export interface ClimateAnnualTableAttrs {
-  data: MonthlyRecord[];
+interface ClimateAnnualTableAttrs {
+  data: StationRecord[];
 }
 
 interface AnnualSummary {
@@ -75,11 +75,9 @@ const ANNUAL_SUMMARY_TABLE_COLUMNS = [
   ...col,
 })) as DataTableColumn<AnnualSummary>[];
 
-let annualData = [] as AnnualSummary[];
-
-const calculateAnnualSummary = (data: StationRecord[]) => {
+const calculateAnnualSummary = (data: StationRecord[]): AnnualSummary[] => {
   data.sort((a, b) => a.timestamp - b.timestamp);
-  annualData = d3
+  return d3
     .rollups(
       data,
       (v) => ({
@@ -99,33 +97,44 @@ const calculateAnnualSummary = (data: StationRecord[]) => {
     }));
 };
 
-const ClimateAnnualTable: m.Component<ClimateAnnualTableAttrs> = {
-  oninit: () => {
-    const stationData = Climate.stationData;
-    calculateAnnualSummary(stationData);
-  },
+const ClimateAnnualTable: m.ClosureComponent<ClimateAnnualTableAttrs> = () => {
+  let annualSummary: AnnualSummary[];
 
-  view: () => [
-    m(
-      "p",
-      "This table summarizes annual climate metrics.",
-      "Since 'Heating Degree Days' represents degree days below 18°C, large ",
-      "values are associated with years with ",
-      m("emph", "colder"),
-      " days. ",
-      "Years with large 'Cooling Degree Days' had more hot days. ",
-      "The hottest year, 2024, did not have the most cooling degree days ",
-      "because the winter was relatively mild with fewer cooling degree days.",
-    ),
-    m(".table-scroll-container", [
-      m(DataTable<AnnualSummary>, {
-        className: "highlight",
-        columns: ANNUAL_SUMMARY_TABLE_COLUMNS,
-        data: annualData,
-        sortBy: "startFormatted",
-      }),
-    ]),
-  ],
+  return {
+    oninit: (vnode) => {
+      annualSummary = calculateAnnualSummary(vnode.attrs.data);
+    },
+
+    onbeforeupdate: (vnode, old) => {
+      if (vnode.attrs.data !== old.attrs.data) {
+        annualSummary = calculateAnnualSummary(vnode.attrs.data);
+      }
+    },
+
+    view: () => {
+      return [
+        m(
+          "p",
+          "This table summarizes annual climate metrics.",
+          "Since 'Heating Degree Days' represents degree days below 18°C, large ",
+          "values are associated with years with ",
+          m("emph", "colder"),
+          " days. ",
+          "Years with large 'Cooling Degree Days' had more hot days. ",
+          "The hottest year, 2024, did not have the most cooling degree days ",
+          "because the winter was relatively mild with fewer cooling degree days.",
+        ),
+        m(".table-scroll-container", [
+          m(DataTable<AnnualSummary>, {
+            className: "highlight",
+            columns: ANNUAL_SUMMARY_TABLE_COLUMNS,
+            data: annualSummary,
+            sortBy: "startFormatted",
+          }),
+        ]),
+      ];
+    },
+  };
 };
 
 export default ClimateAnnualTable;

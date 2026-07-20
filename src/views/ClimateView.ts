@@ -147,7 +147,7 @@ const ClimateView = () => {
               }),
               m("h3", "Each Year..."),
               m(ClimateAnnualTable, {
-                data: Climate.monthlyData,
+                data: Climate.stationData,
               }),
               m(ClimateCummulativeDegreeDayPlot, {
                 aggregatedData: Climate.stationData,
