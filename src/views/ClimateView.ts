@@ -142,7 +142,7 @@ const ClimateView = () => {
               m(ClimateStation),
               m(ClimateDataTable),
               m(ClimateMonthlyPlot, {
-                aggregatedData: Climate.monthlyData,
+                aggregatedData: Climate.stationData,
                 clientHeight: 400,
               }),
               m("h3", "Each Year..."),

@@ -1,6 +1,7 @@
 import m from "mithril";
-import Climate, { MonthlyRecord } from "../models/Climate";
+import Climate, { StationRecord } from "../models/Climate";
 import * as d3 from "d3";
+import { timestampMonth } from "../utils/date";
 import {
   MARGIN,
   COLOR,
@@ -12,10 +13,36 @@ import {
   drawScatterplotLine,
 } from "../utils/draw";
 
-interface WeeklyClimateAttrs extends VnodeDOMAttrs<MonthlyRecord> {}
+interface WeeklyClimateAttrs extends VnodeDOMAttrs<StationRecord> {}
 
-const drawClimateMonthlyPlot = (vnode: m.VnodeDOM<WeeklyClimateAttrs>) => {
-  const { aggregatedData: data, clientHeight } = vnode.attrs;
+interface MonthlyRecord extends StationRecord {
+  date: Date;
+}
+
+const calculateMonthlyRecords = (data: StationRecord[]): MonthlyRecord[] => {
+  return d3
+    .rollups(
+      data,
+      (v) => ({
+        meantemp: d3.mean(v, (d) => d.meantemp) || 0,
+        heatDegDays: d3.sum(v, (d) => d.heatDegDays) || 0,
+        coolDegDays: d3.sum(v, (d) => d.coolDegDays) || 0,
+        totalPrecipitation: d3.mean(v, (d) => d.totalPrecipitation) || 0,
+      }),
+      (d) => timestampMonth(d.timestamp),
+    )
+    .map(([week, stats]) => ({
+      date: week,
+      timestamp: week.getTime(),
+      ...stats,
+    }));
+};
+
+const drawClimateMonthlyPlot = (
+  data: MonthlyRecord[],
+  vnode: m.VnodeDOM<WeeklyClimateAttrs>,
+) => {
+  const { clientHeight } = vnode.attrs;
   const clientWidth = Math.min(Math.max(400, vnode.dom.clientWidth), 800);
   const width = clientWidth - MARGIN.right - MARGIN.left;
   const height = clientHeight - MARGIN.top - MARGIN.bottom;
@@ -110,23 +137,35 @@ const drawClimateMonthlyPlot = (vnode: m.VnodeDOM<WeeklyClimateAttrs>) => {
 
 const ClimateMonthlyPlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
   let observer: ResizeObserver;
+  let monthlyRecords: MonthlyRecord[];
   return {
+    oninit: (vnode) => {
+      monthlyRecords = calculateMonthlyRecords(vnode.attrs.aggregatedData);
+    },
+
+    onbeforeupdate: (vnode, old) => {
+      if (vnode.attrs.aggregatedData !== old.attrs.aggregatedData)
+        monthlyRecords = calculateMonthlyRecords(vnode.attrs.aggregatedData);
+    },
+
     oncreate: (vnode) => {
-      drawClimateMonthlyPlot(vnode);
       observer = new ResizeObserver(() => m.redraw());
       observer.observe(vnode.dom);
     },
-    onupdate: (vnode) => drawClimateMonthlyPlot(vnode),
+
     onremove: () => observer.disconnect(),
+
+    onupdate: (vnode) => drawClimateMonthlyPlot(monthlyRecords, vnode),
+
     view: () => {
-      return m(
-        "div.chart-container",
+      return m("div.card-panel", [
         m(
           "p",
           "The chart below shows monthly heat degree days, temperature, and ",
           `precipitation since 2020 at ${Climate.stationInformation?.name}.`,
         ),
-      );
+        m("div.chart-container"),
+      ]);
     },
   };
 };

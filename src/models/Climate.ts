@@ -1,11 +1,8 @@
 import AppState from "./AppState";
 import Stations from "./Stations";
 import { memoizedJSONRequest } from "../utils/memoize";
-import { timestampMonth } from "../utils/date";
-import { FeatureCollection } from "geojson";
-
-import * as d3 from "d3";
 import { Status } from "./types";
+import { FeatureCollection } from "geojson";
 
 export interface StationRecord {
   // Raw data
@@ -16,9 +13,6 @@ export interface StationRecord {
   totalPrecipitation: number | null;
 }
 
-export interface MonthlyRecord extends StationRecord {
-  date: Date;
-}
 
 export interface StationInformation {
   name: string;
@@ -89,7 +83,6 @@ const Climate = {
   climateId: null as string | null,
   stationInformation: null as StationInformation | null,
   stationData: [] as StationRecord[],
-  monthlyData: [] as MonthlyRecord[],
 
   oninit: async () => {
     // Populate with defaults from cache
@@ -123,22 +116,6 @@ const Climate = {
       longitude: stationRecord.Longitude,
       name: stationRecord.Name,
     };
-    Climate.monthlyData = d3
-      .rollups(
-        Climate.stationData,
-        (v) => ({
-          meantemp: d3.mean(v, (d) => d.meantemp) || 0,
-          heatDegDays: d3.sum(v, (d) => d.heatDegDays) || 0,
-          coolDegDays: d3.sum(v, (d) => d.coolDegDays) || 0,
-          totalPrecipitation: d3.mean(v, (d) => d.totalPrecipitation) || 0,
-        }),
-        (d) => timestampMonth(d.timestamp),
-      )
-      .map(([week, stats]) => ({
-        date: week,
-        timestamp: week.getTime(),
-        ...stats,
-      }));
 
     Climate.status = Status.READY;
     AppState.recompute();
