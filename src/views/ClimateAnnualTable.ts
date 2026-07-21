@@ -1,10 +1,7 @@
 import m from "mithril";
-import {
-  DataTable,
-  DataTableColumn,
-  CellRendererAttrs,
-} from "mithril-materialized";
+import { DataTable, DataTableColumn } from "mithril-materialized";
 import { StationRecord } from "../models/Climate";
+import { FixedPointCellRenderer } from "../utils/table";
 
 import * as d3 from "d3";
 
@@ -19,28 +16,6 @@ interface AnnualSummary {
   heatDegDays: number;
   coolDegDays: number;
 }
-
-const FixedPointCellRenderer = (
-  digits: number,
-): m.FactoryComponent<CellRendererAttrs<AnnualSummary>> => {
-  return () => {
-    return {
-      view: ({ attrs }) => {
-        const { value } = attrs;
-
-        if (
-          value === undefined ||
-          value === null ||
-          typeof value !== "number"
-        ) {
-          return "";
-        }
-
-        return value.toFixed(digits);
-      },
-    };
-  };
-};
 
 const ANNUAL_SUMMARY_TABLE_COLUMNS = [
   { key: "year", title: "Year", field: "year" },

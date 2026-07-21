@@ -7,9 +7,14 @@ import EnergyUse, {
 } from "../models/EnergyUse";
 import IntervalDatePickerView from "./IntervalDatePickerView";
 import FileListItem from "./FileListItem";
-import { formatDate, formatHour } from "../utils/date";
 import EnergyUsePowerOutagePlot from "./EnergyUsePowerOutagePlot";
 import EnergyUseHourlyPlot from "./EnergyUseHourlyPlot";
+import {
+  DollarCellRenderer,
+  PrecisionCellRenderer,
+  TimestampAsDateRenderer,
+  TimestampAsHourRenderer,
+} from "../utils/table";
 
 const EnergyUseFiles: m.Component = {
   view: () => {
@@ -30,11 +35,22 @@ const UsageSummaryDisplay: m.Component<{
       {
         key: "start",
         title: "Start Date",
-        render: (row: UsageSummaryRecord) => formatDate(row.timestamp),
+        align: "left",
+        field: "timestamp",
+        cellRenderer: TimestampAsDateRenderer(),
       },
       { key: "days", title: "Days", field: "days" },
-      { key: "cost", title: "Cost ($)", field: "cost" },
-      { key: "consumption", title: "Consumption (kWh)", field: "consumption" },
+      {
+        key: "cost",
+        title: "Cost ($)",
+        field: "cost",
+        cellRenderer: DollarCellRenderer(),
+      },
+      {
+        key: "consumption",
+        title: "Consumption (kWh)",
+        field: "consumption",
+      },
       { key: "reading", title: "Meter Read Type", field: "reading" },
     ];
 
@@ -65,13 +81,15 @@ const IntervalSummaryDisplay: m.Component<{
       {
         key: "start",
         title: "Start Date",
-        render: (row) => formatDate(row.timestamp),
+        field: "timestamp",
+        cellRenderer: TimestampAsDateRenderer(),
       },
       { key: "hours", title: "Hours", field: "intervalCount" },
       {
         key: "consumption",
         title: "Consumption (kWh)",
-        render: (row) => row.consumption.toPrecision(3),
+        field: "consumption",
+        cellRenderer: PrecisionCellRenderer(3),
       },
     ];
 
@@ -104,17 +122,20 @@ const IntervalReadingDisplay: m.Component<{
       {
         key: "start",
         title: "Date",
-        render: (row) => formatDate(row.timestamp),
+        field: "timestamp",
+        cellRenderer: TimestampAsDateRenderer(),
       },
       {
         key: "time",
         title: "Hour",
-        render: (row) => formatHour(row.timestamp),
+        field: "timestamp",
+        cellRenderer: TimestampAsHourRenderer(),
       },
       {
         key: "consumption",
         title: "Consumption (kWh)",
-        render: (row) => row.consumption.toPrecision(3),
+        field: "consumption",
+        cellRenderer: PrecisionCellRenderer(3),
       },
     ];
 

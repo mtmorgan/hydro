@@ -13,6 +13,7 @@ import {
 import EnergyUse, { IntervalReadingRecord } from "../models/EnergyUse";
 import { RunRecord } from "../services/aggregate";
 import { formatDate } from "../utils/date";
+import { TimestampAsDateRenderer } from "../utils/table";
 
 const PowerOutageTable: m.Component<{ runs: RunRecord[] }> = {
   view: ({ attrs }) => {
@@ -25,10 +26,18 @@ const PowerOutageTable: m.Component<{ runs: RunRecord[] }> = {
       {
         key: "start",
         title: "Start date",
-        render: (row) => formatDate(row.timestamp),
+        field: "timestamp",
+        cellRenderer: TimestampAsDateRenderer(),
       },
-      { key: "duration", title: "Duration (hours)", field: "duration" },
-    ];
+      {
+        key: "duration",
+        title: "Duration (hours)",
+        field: "duration",
+      },
+    ].map((col) => ({
+      sortable: true,
+      ...col,
+    })) as DataTableColumn<RunRecord>[];
 
     return [
       m("div", [

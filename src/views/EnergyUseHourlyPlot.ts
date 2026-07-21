@@ -128,7 +128,7 @@ const EnergyUseHourlyPlot: m.Component = {
   view: () => [
     m(
       "div.card-panel",
-      m("p", m("stong", "Hourly consumption")),
+      m("p", m("strong", "Hourly Consumption")),
       EnergyUse.hourlyData.length > 0 &&
         m(HourlyConsumption, {
           aggregatedData: EnergyUse.hourlyData,

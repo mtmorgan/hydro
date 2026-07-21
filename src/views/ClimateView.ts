@@ -5,9 +5,10 @@ import ClimateAnnualTable from "./ClimateAnnualTable";
 import ClimateCumulativeDegreeDayPlot from "./ClimateCumulativeDegreeDayPlot";
 import Stations from "../models/Stations";
 import { StationMap } from "./StationMap";
-import { DataTable } from "mithril-materialized";
+import { DataTable, DataTableColumn } from "mithril-materialized";
 import { formatDate } from "../utils/date";
 import { Status } from "../models/types";
+import { FixedPointCellRenderer } from "../utils/table";
 
 interface LabelValueViewAttrs {
   label: string;
@@ -61,7 +62,6 @@ const ClimateDataTable: m.Component = {
     const startDate = formatDate(stationData[0].timestamp);
     const endDate = formatDate(stationData[stationData.length - 1].timestamp);
     return m("div.card-panel", [
-      m("p", m("strong", "Annual Climate")),
       m("p", [
         m(labelValueView, {
           label: "Date range",
@@ -90,25 +90,36 @@ const ClimateDataTable: m.Component = {
             {
               key: "date",
               title: "Date",
-              render: (row) => formatDate(row.timestamp),
+              render: (row: StationRecord) => formatDate(row.timestamp),
             },
-            { key: "meantemp", title: "Mean Temp (°C)", field: "meantemp" },
+            {
+              key: "meantemp",
+              title: "Mean Temp (°C)",
+              field: "meantemp",
+              cellRenderer: FixedPointCellRenderer(1),
+            },
             {
               key: "heatDegDays",
               title: "Heating Degree Days",
               field: "heatDegDays",
+              cellRenderer: FixedPointCellRenderer(1),
             },
             {
               key: "coolDegDays",
               title: "Cooling Degree Days",
               field: "coolDegDays",
+              cellRenderer: FixedPointCellRenderer(1),
             },
             {
               key: "totalPrecipitation",
               title: "Total Precipitation (mm)",
               field: "totalPrecipitation",
+              cellRenderer: FixedPointCellRenderer(1),
             },
-          ],
+          ].map((col) => ({
+            align: "center",
+            ...col,
+          })) as DataTableColumn<StationRecord>[],
           striped: false,
         }),
       ]),
