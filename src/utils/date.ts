@@ -6,3 +6,9 @@ export const formatDate = (timestamp: number): string => {
 
 export const formatHour = (timestamp: number): string =>
   new Date(timestamp).getHours().toString();
+
+export const timestampMonth = (timestamp: number): Date => {
+  const referenceYear = 2022; // Arbitrary
+  const m = new Date(timestamp).getMonth();
+  return new Date(referenceYear, m, 1);
+};

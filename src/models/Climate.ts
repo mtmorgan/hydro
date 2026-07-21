@@ -1,7 +1,9 @@
 import AppState from "./AppState";
 import Stations from "./Stations";
 import { memoizedJSONRequest } from "../utils/memoize";
+import { timestampMonth } from "../utils/date";
 import { FeatureCollection } from "geojson";
+
 import * as d3 from "d3";
 import { Status } from "./types";
 
@@ -43,7 +45,7 @@ const dailyDataPropertyMap: Record<keyof DailyDataProperties, undefined> = {
 
 const requestDailyData = async (climateId: string) => {
   Climate.status = Status.LOADING;
-  const from = new Date("2022-01-01").toISOString();
+  const from = new Date("2020-01-01").toISOString();
   const dateInterval = `${from}/..`;
   const properties = Object.keys(dailyDataPropertyMap).join(",");
   const url =
@@ -89,15 +91,24 @@ const Climate = {
   stationData: [] as StationRecord[],
   monthlyData: [] as MonthlyRecord[],
 
+  oninit: async () => {
+    // Populate with defaults from cache
+    let climateId = localStorage.getItem("climateId");
+    if (climateId) {
+      Climate.climateId = climateId;
+      Climate.status = Status.READY;
+    }
+  },
+
   load: async (climateId: string) => {
     Climate.status = Status.LOADING;
     if (climateId !== localStorage.getItem("climateId")) {
-      // Flush cache, since it is only large enough for a couple of stationIds
+      // Flush cache, since it is only large enough for a couple of climateIds
       localStorage.removeItem("dailyData");
       localStorage.setItem("climateId", climateId);
     }
 
-    const stationRecord = Stations.getByClimateId(climateId);
+    const stationRecord = await Stations.getByClimateId(climateId);
     if (stationRecord === undefined || stationRecord === null) {
       Climate.error = `Unknown climate station identifier ${climateId}`;
       Climate.status = Status.ERROR;
@@ -112,7 +123,6 @@ const Climate = {
       longitude: stationRecord.Longitude,
       name: stationRecord.Name,
     };
-    const referenceYear = 2022; // Arbitrary
     Climate.monthlyData = d3
       .rollups(
         Climate.stationData,
@@ -122,11 +132,7 @@ const Climate = {
           coolDegDays: d3.sum(v, (d) => d.coolDegDays) || 0,
           totalPrecipitation: d3.mean(v, (d) => d.totalPrecipitation) || 0,
         }),
-        (d) => {
-          // Force all dates to the same reference year
-          const m = new Date(d.timestamp).getMonth();
-          return new Date(referenceYear, m, 1);
-        },
+        (d) => timestampMonth(d.timestamp),
       )
       .map(([week, stats]) => ({
         date: week,

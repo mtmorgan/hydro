@@ -14,8 +14,6 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
 
   return {
     oncreate: async (vnode) => {
-      await Stations.init();
-
       // Initialize map on the DOM element
       map = L.map(vnode.dom as HTMLElement).setView([43.6532, -79.3832], 7);
 
@@ -25,14 +23,14 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
       }).addTo(map);
 
       // Add markers for all stations
-      Stations.list &&
-        Stations.list.forEach((s: StationRecord) => {
-          const marker = L.marker([s.Latitude, s.Longitude], {
-            icon: lollipopIcon,
-          }).addTo(map);
+      const records = await Stations.getStations();
+      records.forEach((s: StationRecord) => {
+        const marker = L.marker([s.Latitude, s.Longitude], {
+          icon: lollipopIcon,
+        }).addTo(map);
 
-          // Construct a detailed popup
-          marker.bindPopup(`
+        // Construct a detailed popup
+        marker.bindPopup(`
                     <div class="station-popup">
                         <b>${s.Name}</b><br>
                         ID: ${s.ClimateId}<br>
@@ -43,8 +41,8 @@ export const StationMap: m.FactoryComponent<StationMapAttrs> = () => {
                     </div>
                 `);
 
-          marker.on("click", () => vnode.attrs.onSelect(s.ClimateId));
-        });
+        marker.on("click", () => vnode.attrs.onSelect(s.ClimateId));
+      });
       m.redraw();
     },
 

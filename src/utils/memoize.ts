@@ -21,7 +21,8 @@ async function memoizedJSONRequest<T>(
   const stored = localStorage.getItem(key);
   if (stored) {
     const entry: CacheEntry<T> = JSON.parse(stored);
-    if (Date.now() - entry.timestamp < timeout) {
+    const internetUnavailable = await isInternetUnavailable();
+    if (internetUnavailable || Date.now() - entry.timestamp < timeout) {
       const resolved = Promise.resolve(entry.data);
       memoryCache.set(url, resolved);
       return resolved;
@@ -48,5 +49,31 @@ async function memoizedJSONRequest<T>(
   memoryCache.set(url, requestPromise);
   return requestPromise;
 }
+
+/**
+ * Checks if the device has an active internet connection.
+ * @param testUrl Optional URL to ping. Defaults to a reliable, lightweight endpoint.
+ * @returns Promise<boolean> True if online, false if offline.
+ */
+const isInternetUnavailable =
+  async () // testUrl: string = "https://google.com",
+  : Promise<boolean> => {
+    // 1. Fast local check
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      return true;
+    }
+
+    return false;
+    // try {
+    //   await fetch(testUrl, {
+    //     method: "HEAD", // Only fetch headers to save data
+    //     mode: "no-cors", // Prevents CORS errors on third-party domains
+    //     cache: "no-store", // Avoids cached success responses
+    //   });
+    //   return false;
+    // } catch (error) {
+    //   return true;
+    // }
+  };
 
 export { memoizedJSONRequest, ONE_DAY_MS };

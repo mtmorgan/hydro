@@ -4,7 +4,6 @@ import IntroductionView from "./IntroductionView";
 import EnergyView from "./EnergyView";
 import ClimateView from "./ClimateView";
 import InsightView from "./InsightView";
-import ImplimentationView from "./ImplementationView";
 
 const steps: WizardStep[] = [
   { title: "Introduction", vnode: () => m(IntroductionView) },
