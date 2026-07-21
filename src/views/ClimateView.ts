@@ -61,6 +61,7 @@ const ClimateDataTable: m.Component = {
     const startDate = formatDate(stationData[0].timestamp);
     const endDate = formatDate(stationData[stationData.length - 1].timestamp);
     return m("div.card-panel", [
+      m("p", m("strong", "Annual Climate")),
       m("p", [
         m(labelValueView, {
           label: "Date range",
@@ -145,7 +146,6 @@ const ClimateView = () => {
                 aggregatedData: Climate.stationData,
                 clientHeight: 400,
               }),
-              m("h3", "Each Year..."),
               m(ClimateAnnualTable, {
                 data: Climate.stationData,
               }),

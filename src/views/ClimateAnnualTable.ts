@@ -112,10 +112,14 @@ const ClimateAnnualTable: m.ClosureComponent<ClimateAnnualTableAttrs> = () => {
     },
 
     view: () => {
-      return [
+      return m("div.card-panel", [
         m(
           "p",
-          "This table summarizes annual climate metrics.",
+          m("strong", "Changes in Temperature, Precipitation and Degree Days"),
+        ),
+        m(
+          "p",
+          "This table summarizes annual climate metrics. ",
           "Since 'Heating Degree Days' represents degree days below 18°C, large ",
           "values are associated with years with ",
           m("emph", "colder"),
@@ -132,7 +136,7 @@ const ClimateAnnualTable: m.ClosureComponent<ClimateAnnualTableAttrs> = () => {
             sortBy: "startFormatted",
           }),
         ]),
-      ];
+      ]);
     },
   };
 };

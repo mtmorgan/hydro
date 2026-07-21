@@ -67,7 +67,7 @@ const calculateCumulativeRecord = (
   return cumulativeRecords;
 };
 
-const drawClimateCummulativeDegreeDayPlot = (
+const drawClimateCumulativeDegreeDayPlot = (
   data: CumulativeRecord[],
   vnode: m.VnodeDOM<StationRecordAttrs>,
 ) => {
@@ -164,7 +164,7 @@ const drawClimateCummulativeDegreeDayPlot = (
   });
 };
 
-const ClimateCummulativeDegreeDayPlot: m.ClosureComponent<
+const ClimateCumulativeDegreeDayPlot: m.ClosureComponent<
   StationRecordAttrs
 > = () => {
   let cumulativeRecords: CumulativeRecord[];
@@ -193,20 +193,21 @@ const ClimateCummulativeDegreeDayPlot: m.ClosureComponent<
 
     // View, including plot
     onupdate: (vnode) =>
-      drawClimateCummulativeDegreeDayPlot(cumulativeRecords, vnode),
+      drawClimateCumulativeDegreeDayPlot(cumulativeRecords, vnode),
 
     view: () => {
-      return [
+      return m("div.card-panel", [
+        m("p", m("strong", "Monthly Heating and Cooling Degree Days")),
         m(
           "p",
           "What has the temperture been like over the last several years? ",
-          "The chart below shows cummulative heating and cooling degree days ",
+          "The chart below shows cumulative heating and cooling degree days ",
           `since 2020 at ${Climate.stationInformation?.name}.`,
         ),
         m("div.chart-container"),
-      ];
+      ]);
     },
   };
 };
 
-export default ClimateCummulativeDegreeDayPlot;
+export default ClimateCumulativeDegreeDayPlot;

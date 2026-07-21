@@ -159,6 +159,7 @@ const ClimateMonthlyPlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
 
     view: () => {
       return m("div.card-panel", [
+        m("p", m("strong", "An Average Month")),
         m(
           "p",
           "The chart below shows monthly heat degree days, temperature, and ",
