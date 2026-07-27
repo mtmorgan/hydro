@@ -98,30 +98,21 @@ const drawHourlyConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 };
 
-const HourlyConsumption: m.ClosureComponent<Attrs> = () => {
-  let observer: ResizeObserver;
-
-  return {
-    oncreate: (vnode) => {
-      drawHourlyConsumptionChart(vnode);
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-    onupdate: (vnode) => drawHourlyConsumptionChart(vnode),
-    onremove: () => observer.disconnect(),
-    view: () => {
-      return m(
-        "div.chart-container",
-        m(
-          "p",
-          "Each blue point represents the hourly energy consumption on a ",
-          "single day. Black points are the hourly average over all days. ",
-          "Mouse over blue points for the corresponding date.",
-        ),
-        m(IntervalDatePickerView),
-      );
-    },
-  };
+const HourlyConsumption: m.Component<Attrs> = {
+  oncreate: (vnode) => drawHourlyConsumptionChart(vnode),
+  onupdate: (vnode) => drawHourlyConsumptionChart(vnode),
+  view: () => {
+    return [
+      m(
+        "p",
+        "Each blue point represents the hourly energy consumption on a ",
+        "single day. Black points are the hourly average over all days. ",
+        "Mouse over blue points for the corresponding date.",
+      ),
+      m(IntervalDatePickerView),
+      m("div.chart-container"),
+    ];
+  },
 };
 
 const EnergyUseHourlyPlot: m.Component = {

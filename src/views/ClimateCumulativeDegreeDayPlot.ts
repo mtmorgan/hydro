@@ -168,7 +168,6 @@ const ClimateCumulativeDegreeDayPlot: m.ClosureComponent<
   StationRecordAttrs
 > = () => {
   let cumulativeRecords: CumulativeRecord[];
-  let observer: ResizeObserver;
 
   return {
     // Changing aggregatedData
@@ -176,22 +175,18 @@ const ClimateCumulativeDegreeDayPlot: m.ClosureComponent<
       cumulativeRecords = calculateCumulativeRecord(vnode.attrs.aggregatedData);
     },
 
+    oncreate: (vnode) =>
+      drawClimateCumulativeDegreeDayPlot(cumulativeRecords, vnode),
+
     onbeforeupdate: (vnode, old) => {
-      if (vnode.attrs.aggregatedData !== old.attrs.aggregatedData)
+      const update = vnode.attrs.aggregatedData !== old.attrs.aggregatedData;
+      if (update)
         cumulativeRecords = calculateCumulativeRecord(
           vnode.attrs.aggregatedData,
         );
+      return update;
     },
 
-    // ResizeObserver
-    oncreate: (vnode) => {
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-
-    onremove: () => observer.disconnect(),
-
-    // View, including plot
     onupdate: (vnode) =>
       drawClimateCumulativeDegreeDayPlot(cumulativeRecords, vnode),
 

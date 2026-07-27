@@ -136,24 +136,20 @@ const drawClimateMonthlyPlot = (
 };
 
 const ClimateMonthlyPlot: m.ClosureComponent<WeeklyClimateAttrs> = () => {
-  let observer: ResizeObserver;
   let monthlyRecords: MonthlyRecord[];
   return {
     oninit: (vnode) => {
       monthlyRecords = calculateMonthlyRecords(vnode.attrs.aggregatedData);
     },
 
+    oncreate: (vnode) => drawClimateMonthlyPlot(monthlyRecords, vnode),
+
     onbeforeupdate: (vnode, old) => {
-      if (vnode.attrs.aggregatedData !== old.attrs.aggregatedData)
+      const update = vnode.attrs.aggregatedData !== old.attrs.aggregatedData;
+      if (update)
         monthlyRecords = calculateMonthlyRecords(vnode.attrs.aggregatedData);
+      return update;
     },
-
-    oncreate: (vnode) => {
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-
-    onremove: () => observer.disconnect(),
 
     onupdate: (vnode) => drawClimateMonthlyPlot(monthlyRecords, vnode),
 

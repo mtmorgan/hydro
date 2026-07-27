@@ -73,29 +73,20 @@ const drawDailyHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 };
 
-const DailyHeatingConsumption: m.ClosureComponent<Attrs> = () => {
-  let observer: ResizeObserver;
-
-  return {
-    oncreate: (vnode) => {
-      drawDailyHeatingConsumptionChart(vnode);
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-    onupdate: (vnode) => drawDailyHeatingConsumptionChart(vnode),
-    onremove: () => observer.disconnect(),
-    view: () => {
-      return m(
-        "div.chart-container",
-        m(
-          "p",
-          "Each point represents the heating degree days and energy ",
-          "consumption on a single day. Mouse over individual points for ",
-          "the corresponding date.",
-        ),
-      );
-    },
-  };
+const DailyHeatingConsumption: m.Component<Attrs> = {
+  oncreate: (vnode) => drawDailyHeatingConsumptionChart(vnode),
+  onupdate: (vnode) => drawDailyHeatingConsumptionChart(vnode),
+  view: () => {
+    return [
+      m(
+        "p",
+        "Each point represents the heating degree days and energy ",
+        "consumption on a single day. Mouse over individual points for ",
+        "the corresponding date.",
+      ),
+      m("div.chart-container"),
+    ];
+  },
 };
 
 const DailyUsePlot: m.Component = {

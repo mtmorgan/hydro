@@ -126,31 +126,22 @@ const drawHeatingConsumptionCostChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 };
 
-const HeatingConsumptionCost: m.ClosureComponent<Attrs> = () => {
-  let observer: ResizeObserver;
-
-  return {
-    oncreate: (vnode) => {
-      drawHeatingConsumptionCostChart(vnode);
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-    onupdate: (vnode) => drawHeatingConsumptionCostChart(vnode),
-    onremove: () => observer.disconnect(),
-    view: () => {
-      return m(
-        "div.chart-container",
-        m(
-          "p",
-          "The gray bars represent heating degree days in each billing period. ",
-          "The blue consumption bars closely track heating degree days when ",
-          "one has electric heat. The yellow dots are actual cost; cost and ",
-          "consumption may differ when, for instance, consumption is ",
-          "estimated rather than actual.",
-        ),
-      );
-    },
-  };
+const HeatingConsumptionCost: m.Component<Attrs> = {
+  oncreate: (vnode) => drawHeatingConsumptionCostChart(vnode),
+  onupdate: (vnode) => drawHeatingConsumptionCostChart(vnode),
+  view: () => {
+    return [
+      m(
+        "p",
+        "The gray bars represent heating degree days in each billing period. ",
+        "The blue consumption bars closely track heating degree days when ",
+        "one has electric heat. The yellow dots are actual cost; cost and ",
+        "consumption may differ when, for instance, consumption is ",
+        "estimated rather than actual.",
+      ),
+      m("div.chart-container"),
+    ];
+  },
 };
 
 const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
@@ -214,29 +205,20 @@ const drawHeatingConsumptionChart = (vnode: m.VnodeDOM<Attrs>) => {
   );
 };
 
-const HeatingConsumption: m.ClosureComponent<Attrs> = () => {
-  let observer: ResizeObserver;
-
-  return {
-    oncreate: (vnode) => {
-      drawHeatingConsumptionChart(vnode);
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-    onupdate: (vnode) => drawHeatingConsumptionChart(vnode),
-    onremove: () => observer.disconnect(),
-    view: () => {
-      return m(
-        "div.chart-container",
-        m(
-          "p",
-          "The dotted line traces the relationship between heating degree ",
-          "days and consumption over time. Mouse over individual points for ",
-          "the corresponding date.",
-        ),
-      );
-    },
-  };
+const HeatingConsumption: m.Component<Attrs> = {
+  oncreate: (vnode) => drawHeatingConsumptionChart(vnode),
+  onupdate: (vnode) => drawHeatingConsumptionChart(vnode),
+  view: () => {
+    return [
+      m(
+        "p",
+        "The dotted line traces the relationship between heating degree ",
+        "days and consumption over time. Mouse over individual points for ",
+        "the corresponding date.",
+      ),
+      m("div.chart-container"),
+    ];
+  },
 };
 
 const AggregatedDataPlots = {

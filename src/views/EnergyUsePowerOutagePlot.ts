@@ -148,29 +148,20 @@ const drawPowerOutageBarcode = (vnode: m.VnodeDOM<Attrs>) => {
   drawStackedBarcode(chart, merged, xScale, yScale, tooltip);
 };
 
-const PowerOutageBarcodePlot: m.ClosureComponent<Attrs> = () => {
-  let observer: ResizeObserver;
-
-  return {
-    oncreate: (vnode) => {
-      drawPowerOutageBarcode(vnode);
-      observer = new ResizeObserver(() => m.redraw());
-      observer.observe(vnode.dom);
-    },
-    onupdate: (vnode) => drawPowerOutageBarcode(vnode),
-    onremove: () => observer.disconnect(),
-    view: () => {
-      return m(
-        "div.chart-container",
-        m(
-          "p",
-          "The barcode shows each day with a power outage as a vertical bar. ",
-          "The width of the bar represents the duration of the outage. Mouse ",
-          "over each bar for details.",
-        ),
-      );
-    },
-  };
+const PowerOutageBarcodePlot: m.Component<Attrs> = {
+  oncreate: (vnode) => drawPowerOutageBarcode(vnode),
+  onupdate: (vnode) => drawPowerOutageBarcode(vnode),
+  view: () => {
+    return [
+      m(
+        "p",
+        "The barcode shows each day with a power outage as a vertical bar. ",
+        "The width of the bar represents the duration of the outage. Mouse ",
+        "over each bar for details.",
+      ),
+      m("div.chart-container"),
+    ];
+  },
 };
 
 const EnergyUsePowerOutagePlot: m.Component = {

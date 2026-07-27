@@ -81,9 +81,9 @@ const ClimateAnnualTable: m.ClosureComponent<ClimateAnnualTableAttrs> = () => {
     },
 
     onbeforeupdate: (vnode, old) => {
-      if (vnode.attrs.data !== old.attrs.data) {
-        annualSummary = calculateAnnualSummary(vnode.attrs.data);
-      }
+      const update = vnode.attrs.data !== old.attrs.data;
+      if (update) annualSummary = calculateAnnualSummary(vnode.attrs.data);
+      return update;
     },
 
     view: () => {
