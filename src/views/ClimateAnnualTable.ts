@@ -44,8 +44,7 @@ const ANNUAL_SUMMARY_TABLE_COLUMNS = [
     cellRenderer: FixedPointCellRenderer(0),
   },
 ].map((col) => ({
-  // default alignment
-  align: "center",
+  // defaults
   sortable: true,
   ...col,
 })) as DataTableColumn<AnnualSummary>[];
@@ -83,7 +82,7 @@ const ClimateAnnualTable: m.ClosureComponent<ClimateAnnualTableAttrs> = () => {
     onbeforeupdate: (vnode, old) => {
       const update = vnode.attrs.data !== old.attrs.data;
       if (update) annualSummary = calculateAnnualSummary(vnode.attrs.data);
-      return update;
+      return true; // e.g., because column is being sorted...
     },
 
     view: () => {

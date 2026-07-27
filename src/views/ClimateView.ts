@@ -8,7 +8,10 @@ import { StationMap } from "./StationMap";
 import { DataTable, DataTableColumn } from "mithril-materialized";
 import { formatDate } from "../utils/date";
 import { Status } from "../models/types";
-import { FixedPointCellRenderer } from "../utils/table";
+import {
+  FixedPointCellRenderer,
+  TimestampAsDateRenderer,
+} from "../utils/table";
 
 interface LabelValueViewAttrs {
   label: string;
@@ -49,82 +52,104 @@ const ClimateStation: m.Component = {
   },
 };
 
-const ClimateDataTable: m.Component = {
-  view: () => {
-    const { stationData } = Climate;
-    const nMissing = stationData.filter((day) => day.meantemp === null).length;
-    if (nMissing === stationData.length) {
-      return m(
-        "div.card-panel.red.lighten-4",
-        "Error: No valid climate data available.",
-      );
-    }
-    const startDate = formatDate(stationData[0].timestamp);
-    const endDate = formatDate(stationData[stationData.length - 1].timestamp);
-    return m("div.card-panel", [
-      m("p", [
-        m(labelValueView, {
-          label: "Date range",
-          value: `${startDate} to ${endDate}`,
-        }),
-        m(labelValueView, {
-          label: "Number of observations",
-          value: stationData.length,
-        }),
-        m(labelValueView, {
-          label: "Missing mean temperature observations",
-          value: nMissing,
-        }),
-      ]),
-      m("div", [
-        m(labelValueView, {
-          label: "Data (scroll for more)",
-          value: "",
-        }),
-      ]),
-      m(".table-scroll-container", [
-        m(DataTable<StationRecord>, {
-          className: "highlight",
-          data: stationData,
-          columns: [
-            {
-              key: "date",
-              title: "Date",
-              render: (row: StationRecord) => formatDate(row.timestamp),
-            },
-            {
-              key: "meantemp",
-              title: "Mean Temp (°C)",
-              field: "meantemp",
-              cellRenderer: FixedPointCellRenderer(1),
-            },
-            {
-              key: "heatDegDays",
-              title: "Heating Degree Days",
-              field: "heatDegDays",
-              cellRenderer: FixedPointCellRenderer(1),
-            },
-            {
-              key: "coolDegDays",
-              title: "Cooling Degree Days",
-              field: "coolDegDays",
-              cellRenderer: FixedPointCellRenderer(1),
-            },
-            {
-              key: "totalPrecipitation",
-              title: "Total Precipitation (mm)",
-              field: "totalPrecipitation",
-              cellRenderer: FixedPointCellRenderer(1),
-            },
-          ].map((col) => ({
-            align: "center",
-            ...col,
-          })) as DataTableColumn<StationRecord>[],
-          striped: false,
-        }),
-      ]),
-    ]);
+interface ClimateDataTableAttrs {
+  data: StationRecord[];
+}
+
+const CLIMATE_DATA_TABLE_COLUMNS = [
+  {
+    key: "date",
+    title: "Date",
+    field: "timestamp",
+    cellRenderer: TimestampAsDateRenderer(),
   },
+  {
+    key: "meantemp",
+    title: "Mean Temp (°C)",
+    field: "meantemp",
+    cellRenderer: FixedPointCellRenderer(1),
+  },
+  {
+    key: "heatDegDays",
+    title: "Heating Degree Days",
+    field: "heatDegDays",
+    cellRenderer: FixedPointCellRenderer(1),
+  },
+  {
+    key: "coolDegDays",
+    title: "Cooling Degree Days",
+    field: "coolDegDays",
+    cellRenderer: FixedPointCellRenderer(1),
+  },
+  {
+    key: "totalPrecipitation",
+    title: "Total Precipitation (mm)",
+    field: "totalPrecipitation",
+    cellRenderer: FixedPointCellRenderer(1),
+  },
+] as DataTableColumn<StationRecord>[];
+
+const ClimateDataTable: m.ClosureComponent<ClimateDataTableAttrs> = () => {
+  let stationData: StationRecord[];
+  let nMissing: number;
+
+  return {
+    oninit: (vnode) => {
+      stationData = vnode.attrs.data;
+      nMissing = stationData.filter((day) => day.meantemp === null).length;
+    },
+
+    onbeforeupdate: (vnode, old) => {
+      const update = vnode.attrs.data !== old.attrs.data;
+      if (update) {
+        stationData = vnode.attrs.data;
+        nMissing = stationData.filter((day) => day.meantemp === null).length;
+      }
+      return update;
+    },
+
+    view: () => {
+      if (nMissing === stationData.length) {
+        return m(
+          "div.card-panel.red.lighten-4",
+          "Error: No valid climate data available.",
+        );
+      }
+      const startDate = formatDate(stationData[0].timestamp);
+      const endDate = formatDate(stationData[stationData.length - 1].timestamp);
+      return m("div.card-panel", [
+        m("p", [
+          m(labelValueView, {
+            label: "Date range",
+            value: `${startDate} to ${endDate}`,
+          }),
+          m(labelValueView, {
+            label: "Number of observations",
+            value: stationData.length,
+          }),
+          m(labelValueView, {
+            label: "Missing mean temperature observations",
+            value: nMissing,
+          }),
+        ]),
+        m("div", [
+          m(labelValueView, {
+            label: "Data (scroll for more)",
+            value: "",
+          }),
+        ]),
+        m(
+          ".table-scroll-container",
+          m(DataTable<StationRecord>, {
+            className: "highlight",
+            data: stationData,
+            columns: CLIMATE_DATA_TABLE_COLUMNS,
+            striped: false,
+          }),
+        ),
+      ]);
+    },
+  };
 };
 
 const ClimateView = () => {
@@ -152,7 +177,7 @@ const ClimateView = () => {
           case Status.READY:
             return [
               m(ClimateStation),
-              m(ClimateDataTable),
+              m(ClimateDataTable, { data: Climate.stationData }),
               m(ClimateMonthlyPlot, {
                 aggregatedData: Climate.stationData,
                 clientHeight: 400,
