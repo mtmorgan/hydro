@@ -13,6 +13,8 @@ export interface UsageSummaryResult extends StationRecord, UsageSummaryRecord {
   // null values have been removed
   heatDegDays: number;
   meantemp: number;
+  consumptionPerHeatDegDay: number;
+  costPerHeatDegDay: number;
 }
 
 export interface DailyResult extends StationZipRecord<IntervalBlockRecord> {}

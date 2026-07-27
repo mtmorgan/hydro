@@ -46,6 +46,8 @@ export const aggregateRecords = (
             averageTemperature.length
           : 0,
         heatDegDays: heatDegDays,
+        consumptionPerHeatDegDay: energyRecord.consumption / heatDegDays,
+        costPerHeatDegDay: energyRecord.cost / heatDegDays,
       });
 
       acc.dataIndex = nextIdx; // Update state for the next interval

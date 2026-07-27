@@ -1,53 +1,11 @@
 import m from "mithril";
-import {
-  CellRendererAttrs,
-  DataTable,
-  DataTableColumn,
-} from "mithril-materialized";
+import { DataTable, DataTableColumn } from "mithril-materialized";
 import AppState, { UsageSummaryResult } from "../models/AppState";
 import {
   DollarCellRenderer,
   FixedPointCellRenderer,
   TimestampAsDateRenderer,
 } from "../utils/table";
-
-const ConsumptionPerHeatDegDayRenderer = (
-  digits: number,
-): m.FactoryComponent<CellRendererAttrs> => {
-  const FixedPointCell = FixedPointCellRenderer(digits);
-  return () => {
-    return {
-      view: ({ attrs }) => {
-        const row = attrs.value;
-        if (
-          !row ||
-          !row.consumption ||
-          !row.heatDegDays ||
-          isNaN(row.consumption)
-        ) {
-          return m("span", "N/A");
-        }
-        const result = row.consumption / row.heatDegDays;
-        return m(FixedPointCell, { ...attrs, value: result });
-      },
-    };
-  };
-};
-
-const CostPerHeatDegDayRenderer = (): m.FactoryComponent<CellRendererAttrs> => {
-  const DollarCell = DollarCellRenderer();
-  return () => {
-    return {
-      view: ({ attrs }) => {
-        const row = attrs.value; // Use 'data' or 'value' depending on your grid framework
-        if (!row || !row.heatDegDays || isNaN(row.cost))
-          return m("span", "N/A");
-        const result = row.cost / row.heatDegDays;
-        return m(DollarCell, { ...attrs, value: result });
-      },
-    };
-  };
-};
 
 const CLIMATE_TABLE_COLUMNS = [
   {
@@ -57,7 +15,7 @@ const CLIMATE_TABLE_COLUMNS = [
     cellRenderer: TimestampAsDateRenderer(),
     align: "left",
   },
-  { key: "days", title: "Days", field: "days" },
+  { key: "days", title: "Days", field: "days", sortable: false },
   {
     key: "meantemp",
     title: "Mean Temp (°C)",
@@ -84,16 +42,19 @@ const CLIMATE_TABLE_COLUMNS = [
   {
     key: "consumptionPerHDD",
     title: "kWh / HDD",
-    cellRenderer: ConsumptionPerHeatDegDayRenderer(2),
+    field: "consumptionPerHeatDegDay",
+    cellRenderer: FixedPointCellRenderer(2),
   },
   {
     key: "costPerHDD",
     title: "$ / HDD",
-    cellRenderer: CostPerHeatDegDayRenderer(),
+    field: "costPerHeatDegDay",
+    cellRenderer: DollarCellRenderer(),
   },
 ].map((col) => ({
   // default alignment
   align: "right",
+  sortable: true,
   ...col,
 })) as DataTableColumn<UsageSummaryResult>[];
 
